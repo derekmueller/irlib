@@ -9,7 +9,6 @@
 
 from __future__ import print_function
 import sys
-import os
 import glob
 import argparse
 import datetime
@@ -19,8 +18,6 @@ import numpy as np
 import h5py
 import pandas as pd
 import irlib
-import pdb
-#pdb.set_trace()
 
 def get_time(gps_timestamp, timestamp, tzoffset, gpsmissing=False):
     """ 
@@ -105,8 +102,8 @@ def readppp(csv_file):
         try:
             gps_dfs.append(pd.read_csv(file))
             gps = pd.concat(gps_dfs, ignore_index=True)
-        except:
-            print("Could not read file {}".format(file))            
+        except Exception as e:
+            print("Could not read file {} due to {}".format(file, e))            
     print('\n')
         # It may be that there are more columns - ortho ht (second last)
     if gps.shape[1] == 7:
@@ -175,7 +172,6 @@ def readgpx(gpx_file):
 
 ## MAIN PROGRAM
 
-#replacing getopt and def syntax() with argparse
 prog_description = 'This tool replaces the existing geographical data in a ice radar HDF \
     database with data taken from a GPX file, e.g. obtained from a handheld or \
     external GPS unit or from a CSV file, e.g. obtained from a PPP output of GPS data'
@@ -256,7 +252,8 @@ for line in lines:   # for every line...
             hdfaddrs.append(dataset)
             # get the timestamp from the EPU computer
             pcdatetime = dataset.attrs["PCSavetimestamp"]
-            #pcdatetime = pcdatetime.astype(str) # make sure it is a string TODO account for differnent filetypes 
+            if not type(pcdatetime) is str:   #  I lost track of what this may be if not a string! 
+                pcdatetime = pcdatetime.astype(str) # make sure it is a string
             if len(pcdatetime.split(",")) == 4:    # this is a new (> 2016 file format)
                 timestamp, startbuf,buftime,pps = pcdatetime.split(",")
                 timestamp = irlib.recordlist.pcdateconvert(timestamp, datefmt='ddmm')
@@ -306,13 +303,11 @@ if args.timesource == 'iprgps':
     hdfseconds = hdfgpsseconds
 elif args.timesource == 'pcgps':    
     hdfseconds = hdfpcseconds
-elif args.timesource == 'both':
+else:
     hdfseconds = hdfgpsseconds
     # if the hdfgps data is nan, then use the other source
-    hdfseconds[np.isnan(hdfseconds) == True] = hdfpcseconds[np.isnan(hdfgpsseconds) == True]
-else:
-    print('Error in timesource')    
-    sys.exit(1)
+    hdfseconds[np.isnan(hdfseconds)] = hdfpcseconds[np.isnan(hdfgpsseconds)]
+
 
 # Check here to see if the timestamps worked out: 
 if sum(np.isnan(np.array(hdfseconds))) == len(hdfseconds):

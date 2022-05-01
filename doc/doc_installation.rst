@@ -49,10 +49,9 @@ dependencies for irlib.  For more on the dependencies themselves, see below.
 Make an irlib directory
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-This example shows how to create a folder called 'py' in your own home
-directory with irlib files in it, however, you can install irlib wherever you
-wish (including within the conda environment folders). Make a directory
-called 'py' in your home folder. This will hold the irlib directory. Change 
+To follow this example create a folder called 'py' in your own home
+directory and follow directions to add irlib files in it. However, you can install irlib wherever you
+wish (including within the conda environment folders). Once you have decided where to put irlib, change 
 directory into that folder.
 
 
@@ -67,11 +66,9 @@ have git installed you can type the following in the terminal:
 
     >> git clone git@github.com:njwilson23/irlib.git
 
-This makes a directory in your home folder called py/irlib-master. I renamed this to 'irlib' for simplicity. Note: 
-make a copy of the irlib zip file or directory for safekeeping. If you
-start messing around, it's good to get the original back without any
-fuss (mostly important in the field if you are not near internet).
-
+This makes a directory in your home folder called py/irlib-main. I renamed this to 'irlib' for simplicity. Note: 
+if you are going away from the internet, make a copy of the irlib zip file or directory for safekeeping. If you
+start messing around, it's good to get the original back without any fuss.
 
 
 Set the operating system path
@@ -86,14 +83,12 @@ your data files are located).
 Instructions assume you are using Bash and you installed to
 the directory from the example above.
 
-Find the hidden .bashrc file and open it in an editor. At the
-      bottom of this file type and then save the file:
+Find the hidden .bashrc file and open it in an editor. At the bottom of this file type and then save the file:
 
 | ``# Set path for irlib python scripts HERE``
 | ``export PATH=$PATH:~/py/irlib-master``
 
-Then, in a terminal, type the following to make the change
-      permanent:
+Then, in a terminal, type the following to make the change permanent:
 
 ``source .bashrc``
 
@@ -111,6 +106,10 @@ To view you current operating system path:
 
 ``echo %PATH%``
 
+Alternativly, on Windows, one should be able to modify the *Path* variable by right clicking
+on **My Computer** and going to *Properties -> Advanced System Settings ->
+Environment Variables*.
+
 
 Set the conda environment path
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -122,6 +121,7 @@ irlib conda environment.
    always available. In a terminal type:
 
  ``conda activate irlib``
+ 
  ``conda develop`` 
 
 Where is where the irlib code is located
@@ -145,14 +145,16 @@ You should see the useage message starting like so:
 [--swap_lon] [--swap_lat] infile``
 
 Then see if it works with an h5 file (in this example it is called
-'survey.h5':
+'survey.h5'):
 
 ``h5_dumpmeta.py survey.h5``
 
 It will output some metadata to the screen.
 
-If that doesn't work, check your environment is activated, your paths
-are set and make sure that the python files are executable.
+If that doesn't work: 
+- check your conda environment is activated
+- check your paths are set 
+- make sure that the python files are executable
 
 
 Dependencies
@@ -207,8 +209,11 @@ Finally, these are *nice to have*:
 
 Alternative installations
 -------------------------
+These instructions are based on older versions of irlib and have not been tested on version 0.5.
 
-Using a package manager (e.g. APT, rpm, pacman, or Homebrew) download all the dependencies above
+
+Using a package manager (e.g. APT, rpm, pacman, or Homebrew) download all the dependencies 
+listed above.
 
 
 The latest version is on Github_. After downloading either directly or using the
@@ -218,7 +223,7 @@ command
 
     >> git clone git@github.com:njwilson23/irlib.git
 
-Installation is best done with ``pip``, the Python package manager.
+Installation can be done with ``pip``, a Python package manager.
 
 ::
 
@@ -233,8 +238,6 @@ To use the *pywavelet* wavelet transform algorithms, navigate to
 to move the created file ``pywavelet.so`` to some place from which it can be
 imported.
 
-Installing manually
-~~~~~~~~~~~~~~~~~~~
 
 Alternatively, *irlib* can be build in place without ``pip`` by doing
 
@@ -242,19 +245,9 @@ Alternatively, *irlib* can be build in place without ``pip`` by doing
 
     >> python setup.py build_ext --inplace
 
-Path
-~~~~
 
 For convenience, programs that make up *radar\_tools* should be on the execution
-``PATH``. If ``pip`` was used, this should be taken care of. Otherwise, on Linux
-and Mac OS X, one can add the following line to the ``.bashrc``:
-
-::
-
-    export PATH=$PATH:~/python/irlib
-
-On Windows, one should be able to modify the *Path* variable by right clicking
-on **My Computer** and going to *Properties -> Advanced System Settings ->
-Environment Variables*.
+``PATH``. If ``pip`` was used, this should be taken care of. Otherwise, follow instructions
+in section 2.1.4 above.
 
 

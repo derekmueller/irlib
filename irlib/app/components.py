@@ -6,6 +6,7 @@ import irlib
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 from irlib.misc import TryCache
 
 plt.ion()
@@ -33,12 +34,13 @@ class AppWindow(object):
         """
         self.fig = plt.figure(figsize=winsize)
         self.ax = self.fig.add_subplot(1,1,1)
-        #import pdb;  pdb.set_trace()
+
         # Turn off default shortcuts
+
         key_press_cids = self.fig.canvas.callbacks.callbacks.get('key_press_event', {}).copy()
         for cid in key_press_cids.keys():
             self.fig.canvas.mpl_disconnect(cid)
-  
+
         # Connect event handlers
         self.cid_click = self.fig.canvas.mpl_connect('button_press_event', self._onclick)
         self.cid_key = self.fig.canvas.mpl_connect('key_press_event', self._onkeypress)
@@ -120,18 +122,18 @@ class Radargram(AppWindow):
                 self.end_feature()
 
         else:
-
+            
             try:
                 x = int(round(event.xdata))
                 y = int(round(event.ydata))
-
+                
                 if event.button == 1:
 
                     #self.remove_annotation("x-hair")
                     #self.remove_annotation("x-hair-text")
                     if "x-hair" in self.annotations:
                         anns = self.annotations.get("x-hair", []) + \
-                               self.annotations.get("x-hair-text", [])
+                                self.annotations.get("x-hair-text", [])
                         for item in anns:
                             item.remove()
 
@@ -147,7 +149,7 @@ class Radargram(AppWindow):
                                         fid=self.L.fids[x],
                                         samp=y,
                                         time=round(y/self.rate*1e9,2))
-
+                    
                     ha = "left" if (x < self.L.data.shape[1]//2) else "right"
                     va = "top" if (y < self.L.data.shape[0]//2) else "bottom"
                     xoff = 1 if ha == "left" else -1
@@ -155,9 +157,8 @@ class Radargram(AppWindow):
                     txtbbox = dict(facecolor='k', alpha=0.2, pad=3)
 
                     txt = self.ax.text(x+xoff, y+yoff, s, size=10, color="w",
-                                       weight="bold", ha=ha, va=va, bbox=txtbbox)
+                                        weight="bold", ha=ha, va=va, bbox=txtbbox)
                     self.annotations["x-hair-text"] = [txt]
-
                     self.fig.canvas.draw()
 
                 elif event.button == 2:
@@ -264,8 +265,10 @@ class Radargram(AppWindow):
         filter opperation).
         """
         n = self.data.shape[0]
-        self.ax.lines = []
-        self.ax.texts = []
+        # These next 2 lines of code cause problems in matplotlib 3.5 - can't set them
+        #https://matplotlib.org/stable/api/prev_api_changes/api_changes_3.5.0.html?highlight=axes.lines#behaviour-changes
+        #self.ax.lines = []   ##TODO need workaround as this throws an error (can't set)
+        #self.ax.texts = []   ##TODO need workaround as this throws an error (can't set)
 
         # Draw nodes
         drawxy = lambda xy: self.ax.plot(xy[0], xy[1], 'or', markersize=5.0,
@@ -594,7 +597,7 @@ class PickWindow(AppWindow):
 
     def update(self):
         """ Redraw axes and data """
-        self.ax.lines = []
+        
         self.ax.cla()
         self.ax.set_xlim(-self.spacing * (self.ntraces+2) / 2,
                           self.spacing * self.ntraces / 2)
@@ -619,9 +622,10 @@ class PickWindow(AppWindow):
                     self._drawpick(trace, self.dc_points[trno], i)
                 self.mode = oldmode
 
-        locs = self.ax.get_yticks()
-        self.ax.set_yticklabels(np.round(locs*-1e9).astype(int)) #TODO --- UserWarning: FixedFormatter should only be used together with FixedLocator
-
+        # using fixed locator for labels
+        locs = self.ax.get_yticks().tolist()
+        self.ax.yaxis.set_major_locator(mticker.FixedLocator(locs))
+        self.ax.set_yticklabels(["{:0d}".format(np.round(x*-1e9).astype(int)) for x in locs])
 
         self.ax.set_title("Line {0}, mode: {1}".format(self.L.line, self.mode))
 
@@ -690,7 +694,7 @@ class PickWindow(AppWindow):
             self.rg.update()
         return
 
-    def autopick_bed(self, t0=150, tf=1e4, lbnd=None, rbnd=None):
+    def autopick_bed(self, t0=150, tf=10000, lbnd=None, rbnd=None):
         """ Attempt to pick the first break of the direct-coupling wave.
         Optional constraints on start and end time can be passed to improve
         results.

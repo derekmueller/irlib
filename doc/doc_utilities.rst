@@ -106,12 +106,14 @@ be used to specify matching tolerances and which lines to work on.
 
 h5_add_utm
 ~~~~~~~~~~
+
+::
+
 ``h5_add_utm`` uses the *pyproj* library to append projected UTM zone
 coordinates to datasets that only include lon-lat coordinates. This is a
 required step for many of the data processing operations that might be used
 later.
 
-::
 
     SYNTAX: h5_add_utm INFILE OUTFILE
 
@@ -182,10 +184,12 @@ Exploration and conversion
 
 h5_dumpmeta
 ~~~~~~~~~~~
+
+::
+
 ``h5_dumpmeta`` exports the radar metadata to a CSV file or a shapefile. 
 The actual sounding data is not included.
 
-::
 
     SYNTAX: h5_dumpmeta infile [OPTIONS]
 
@@ -205,16 +209,35 @@ The actual sounding data is not included.
 h5_export
 ~~~~~~~~~
 
+::
+
+``h52a.py`` exports a line from HDF5 to an ASCII, REFLEX or BINARY file.
 
 
+	SYNTAX: h5_export.py [-h] [-o OUTFILE] [-l LINE] [--clobber] 
+	{ascii,binary,reflex} infile
+	
+	Positional arguments:
+		{ascii,binary,reflex}	Select which format to export to - either ascii, 
+						binary or reflex	
+		infile				input HDF (.h5) filename, with or without path
+	
+	Optional arguments: 
+		-o OUTFILE, --outfile OUTFILE	
+						output filename, basename only NO extension; defaults to 
+						infile
+		-l LINE, --line LINE	line number to export - defaults to all
+		--clobber  	overwrite existing files
+		
 
 h52mat
 ~~~~~~
+
+::
+
 ``h52mat`` converts HDF data to a MATLAB ``.mat`` file. The filters from
 ``h5_generate_caches`` are available. For those who prefer MATLAB, the rest of
 this document can be ignored.
-
-::
 
     SYNTAX: h52mat SURVEYFILE OUTFILE [options]
 
@@ -229,3 +252,48 @@ this document can be ignored.
         o       overwrite
         q       silence standard output
 
+
+Thickness Determination
+-----------------------
+
+Once Data Management and Exploration and Conversion steps have been completed, the 
+process of thickness determination can begin.
+
+icepick2
+~~~~~~~~
+
+::
+
+``icepick2`` allows for interaction with radargrams.
+
+	SYNTAX: icepick2 <HDF_survey> [-L line_number]
+
+
+mergepicks
+~~~~~~~~~~
+
+::
+
+	SYNTAX: mergepicks infile outdir oldpicks [OPTIONS]
+	
+	Positional arguments:
+		infile	input HDF (.h5) filename
+		outdir	subfolder where new picking files will be written
+		oldpicks	folder where old picking files are found
+
+    Optional arguments:
+		-d, --dir_cache	cache directory, default: cache/
+		-n, --newpick_priority	will priviledge new picks over old picks 
+								in case of conflict
+		--dc 		specify datacapture, default: 0
+
+joinradar
+~~~~~~~~~
+
+::
+
+
+
+icerate
+~~~~~~~
+See chapter 5 for full decription.

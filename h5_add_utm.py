@@ -11,8 +11,6 @@ import traceback
 import h5py
 import irlib
 import pyproj
-import pdb
-pdb.set_trace()
 
 def calculate_centroid(X, Y):
     """ Return the planar centroid of a matched pair of X and Y coordinates.
@@ -34,7 +32,7 @@ def calculate_utm_zone(xll, yll):
 
 # Command-line parsing
 prog_description = """
-    SYNTAX: h5_add_utm --swap_lon INFILE OUTFILE
+    SYNTAX: h5_add_utm --swap_lon --swap_lat INFILE OUTFILE
 
         Replaces geographical coordinates in INFILE with UTM coordinates
         in OUTFILE. Does not perform any datum shift. 
@@ -45,14 +43,14 @@ prog_description = """
         	forces longitudes to be interpretted from the eastern hemisphere.
 		UTM projection is calculated assuming that the data from neither from western Norway nor Svalbard.
 	  New format - Latitude and longigude data in BSI HDF files are signed to indicate 
-		hemisphere. If any lat or lon values are negative, the --swap_lon key is disabled
+		hemisphere. If any lat or lon values are negative, the --swap_lon key and --swap_lat key is disabled
         """
 
 parser = argparse.ArgumentParser(description = prog_description)
 parser.add_argument("infile", help="input HDF (*.h5) filename, with or without path")
 parser.add_argument("outfile")
-parser.add_argument("--swap_lon",action = 'store_true')
-
+parser.add_argument("--swap_lon",action='store_true')
+parser.add_argument("--swap_lat",action='store_true')
 args = parser.parse_args()
 
 INFILE = args.infile
@@ -81,8 +79,8 @@ failed = []
 for i, dataset in enumerate(datasets):
     try:
         metadata.AddDataset(fin[dataset])
-    except ParseError:
-        sys.stderr.write('Failed to read {0}\n'.format(dataset))
+    except Exception as e:
+        sys.stderr.write('Failed to read {0} due to {1}\n'.format(dataset, e))
         failed.append(i)
 fin.close()
 for i in failed[::-1]:
@@ -100,7 +98,10 @@ if xlm>0 and ylm>0:
         lons = [-lon if lon is not None else None for lon in metadata.lons]
 else:
     lons = metadata.lons
-lats = metadata.lats
+if args.swap_lat:
+    lats = [-lat if lat is not None else None for lat in metadata.lats]
+else:
+    lats = metadata.lats    
 
 num_sat = metadata.num_sat
 fix_qual = metadata.fix_qual
@@ -121,6 +122,7 @@ if hemi == 'N':
     projector = pyproj.Proj(proj='utm', zone=zone, north=True, datum="WGS84") # Auto-determined
 if hemi == 'S':
     projector = pyproj.Proj(proj='utm', zone=zone, south=True, datum="WGS84") # Auto-determined
+
 print("Projecting to UTM zone {0}{1}".format(zone, hemi))
 
 for i, (lon, lat) in enumerate(zip(lons, lats)):
@@ -141,9 +143,9 @@ fout = h5py.File(OUTFILE, 'r+')
 # For each dataset in OUTFILE, modify the UTM attribute cluster in place
 for i, dataset in enumerate(datasets):
     try:
-        try:   # This is the old way h5py library decodes based on data type specified
+        try:   # This is the oldParseError way h5py library decodes based on data type specified
             xml = fout[dataset].attrs['GPS Cluster_UTM-MetaData_xml'].decode("utf-8")
-        except:  # This is the newer way, should work h5py >= 3.0 
+        except AttributeError:  # This is the newer way, should work h5py >= 3.0 
             xml = fout[dataset].attrs['GPS Cluster_UTM-MetaData_xml']
         new_xml = (
                 xml.replace('<Name>Datum</Name>\r\n<Val>NaN</Val>',
