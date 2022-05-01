@@ -9,7 +9,6 @@ Follow the conda instructions followed by Linux or Windows instructions
 depending on your system. Mac should be similar to linux. The source
 code is on github at https://github.com/njwilson23/irlib
 
-There are 5 steps:
 
 Setup a conda environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -17,31 +16,32 @@ Setup a conda environment
 These steps will set up and manage your Python environment and
 dependencies for irlib.  For more on the dependencies themselves, see below.
 
--  Install Anaconda or Miniconda python 3 64-bit
--  Open conda prompt **as an administrator** or with **write
+1.  Install Anaconda or Miniconda Python 3 64-bit
+2.  Open conda prompt **as an administrator** or with **write
    permissions** to the conda directory and create an environment
    specifically to use irlib (Run one of these options):
 
-``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas``
+		Use the environment file in the repository (spyder-kernels=1.9 here will also go OUT OF
+		DATE as the Spyder package evolves):
+		
+		``conda create -n environment.yml``
 
--  This will be a bare-bones installation to run irlib
+		This will be a bare-bones installation to run irlib:
+		
+		``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas``
 
-``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas sphinx vitables spyder-kernels``
+		As above but also installs vitables, an hdf viewer, sphinx and spyder-kernels to
+		allow you to use spyder to run and debug the code (but only if you set the interpreter 
+		to the correct environment). The trick with spyder is that the spyder-kernels version must be
+		supported by your version of spyder. You may want to pin the spyder-kernels version (and/or 
+		your python version) like (This will go OUT OF DATE as spyder moves forward, the following works with spyder 4):
+		
+		``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas sphinx vitables spyder-kernels``
 
--  As above but also installs vitables, an hdf viewer, sphinx and spyder-kernels to
-   allow you to use spyder to run and debug the code (but only if you set the interpreter 
-   to the correct environment). The trick with spyder is that the spyder-kernels version must be
-   supported by your version of spyder. You may want to pin the spyder-kernels version (and/or 
-   your python version) like (This will go OUT OF DATE as spyder moves forward, the following works with spyder 4):
 
-``conda create -n irlib -c conda-forge python=3.8 h5py scipy matplotlib cython geopandas vitables spyder-kernels=1.9``
+		``conda create -n irlib -c conda-forge python=3.8 h5py scipy matplotlib cython geopandas vitables spyder-kernels=1.9``
 
--  Use the environment file in the repository (spyder-kernels=1.9 here will also go OUT OF
-   DATE as the Spyder package evolves):
-
-``conda create -n environment.yml``
-
--  To run irlib you need to work out of a conda-aware console and type:
+3.  To run irlib you need to work out of a conda-aware console and type, *this must be done before every session*:
 
 ``conda activate irlib``
 

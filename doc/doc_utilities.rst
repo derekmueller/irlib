@@ -9,6 +9,34 @@ In general, typing any of the utilities without arguments yield invocation and
 usage instructions that are printed to the screen. This section summarizes
 individual tool's functionality.
 
+Recommended data cleaning workflow
+----------------------------------
+
+The following steps are very helpful for data cleaning and streamlining
+workflow. Some of the steps are prerequisites for subsequent
+analyses, so **do this in the correct order**. It is really very
+important that you **take notes on what you did so that your workflow
+can be recreated later**. It is recommmend you open a document and copy paste
+what you did from the terminal in there for safekeeping. Also, you can
+copy the screen output there too. As you go be aware that some scripts
+will overwrite files. Recommend that you use unique file names that
+represent the step that you just completed.
+
+-  ``h5_dumpmeta.py`` : examine metadata, visualize on a GPS
+-  ``h5_consolidate`` : combining h5 files streamlines workflow, take notes
+	of the lines you want to work with 
+-  ``h5_replace_gps.py`` : if you have better GPS data use it to refine
+	position
+-  ``h5_add_utm.py`` : allows irlib to calculate distances easier using 
+	cartesian coordinates
+-  ``h5_dumpmeta.py`` : check that all is well by comaring to earlier
+	metadata
+-  ``h5_dumpmeta.py`` : generate caches to speed up data access and do
+	some more metadata
+
+Once this has been been completed the data is ready to be used in IcePick2.py, 
+which will be elaborated on in the next chapter.
+
 
 Data management
 ----------------
@@ -18,20 +46,28 @@ h5_consolidate
 
 ::
 
-    SYNTAX: h5_consolidate INFILE1 INFILE2 [...] -o OUTFILE
-
-		Combines multiple datasets (>1) into a single concatenated dataset.
-
 ``h5_consolidate`` combines multiple datasets into a single dataset. In the
 process, lines are re-numbered so that they stay in sequential order.
 Concatenating datasets is useful, for example, to combine multiple surveys
 collected on different days into a single file that is easier to manage (but
 larger).
 
+    SYNTAX: h5_consolidate INFILE1 INFILE2 [...] -o OUTFILE
+
+		Combines multiple datasets (>1) into a single concatenated dataset.
+
+
 h5_replace_gps
 ~~~~~~~~~~~~~~
 
 ::
+
+If GPS data collected from the on-board receiver are missing or of poor
+quality, they can be replaced by data from a hand-held GPS receiver. The data
+from the hand-held receiver must be exported as or converted to GPX format,
+which is a standard open format. Calling ``h5_replace_gps`` creates a copy of
+the original dataset with the new coordinates inserted. Command-line flags can
+be used to specify matching tolerances and which lines to work on.
 
     SYNTAX: h5_replace_gps infile outfile gpsfile {gpx,ppp} {iprgps,iprpc,both} [OPTIONS]
 	
@@ -41,14 +77,14 @@ h5_replace_gps
 		GPS data
 
 	Positional arguments:
-		infile           	input HDF (.h5) filename, with or without path, 
-							for which GPS or PC timestamps exist
-		outfile          	output HDF (.h5) filename, with or without path, 
-		                    if this file exists, it will be overwritten
-		gpsfile          	GPS filename(s), with enhanced location, with or 
-		                    without path / wildcards
-		{gpx,ppp}        	Select which format the gps file is in - either 
-		                    gpx or ppp
+		infile				input HDF (.h5) filename, with or without path, 
+						for which GPS or PC timestamps exist
+		outfile				output HDF (.h5) filename, with or without path, 
+						if this file exists, it will be overwritten
+		gpsfile				GPS filename(s), with enhanced location, with or 
+						without path / wildcards
+		{gpx,ppp}			Select which format the gps file is in - either 
+						gpx or ppp
 		{iprgps,iprpc,both}	Select which timestamp to match gps timestamps to 
 		                    - iprgps (recommended), iprpc (if iprgps not available) 
 							or both (use caution)
@@ -56,24 +92,24 @@ h5_replace_gps
     Optional arguments:
 		-t hh 	The hour offset (hh) of the GPR computer from UTC (default = 0)
 		-l n    Work only on line (n); default works on all lines
-		-d n 	Set the max time delta permissible for matching locations to (n) 
-				seconds; default is 15 seconds
+		-d n 	Set the max time delta permissible for matching locations to 
+				(n) seconds; default is 15 seconds
 		-o n 	Adds an offset (n) to the elevations to account for the height of 
-				GPS off the ice or different geoid, use a neg. number to subtract.
+				GPS off the ice or different geoid, use a neg. number to 
+				subtract.
 		-n  	Replace coordinates in HDF with no appropriate supplementary GPS 
-				counterpart with 'NaN'. By default, the original coordinates are retained.
+				counterpart with 'NaN'. By default, the original coordinates 
+				are retained.
 		-p  	Keep all coordinates positive (use with old h5 format where 
-				Lat_N and Long_W).
+				coordinates are Lat_N and Long_W).
 		
-If GPS data collected from the on-board receiver are missing or of poor
-quality, they can be replaced by data from a hand-held GPS receiver. The data
-from the hand-held receiver must be exported as or converted to GPX format,
-which is a standard open format. Calling ``h5_replace_gps`` creates a copy of
-the original dataset with the new coordinates inserted. Command-line flags can
-be used to specify matching tolerances and which lines to work on.
 
 h5_add_utm
 ~~~~~~~~~~
+``h5_add_utm`` uses the *pyproj* library to append projected UTM zone
+coordinates to datasets that only include lon-lat coordinates. This is a
+required step for many of the data processing operations that might be used
+later.
 
 ::
 
@@ -83,21 +119,22 @@ h5_add_utm
         in OUTFILE. Does not perform any datum shift. Projection is calculated
         assuming that the data from neither from western Norway nor Svalbard.
 
-``h5_add_utm`` uses the *pyproj* library to append projected UTM zone
-coordinates to datasets that only include lon-lat coordinates. This is a
-required step for many of the data processing operations that might be used
-later.
 
 The UTM zone is calculated based on a naive algorithm that is ignorant of the
 exceptional UTM circumstances in the vicinity of western Norway and Svalbard.
 
 Works with 2 formats from BSI HDF files: 
-  	Old format - Latitude and longitude data in BSI HDF files are unsigned. It 
+  	Old format - 
+		
+		Latitude and longitude data in BSI HDF files are unsigned. It 
 		is assumed to be in the western hemisphere by default. Passing the --swap_lon 
 		key forces longitudes to be interpretted from the eastern hemisphere.
 		UTM projection is calculated assuming that the data from neither from western 
 		Norway nor Svalbard.
-	New format - Latitude and longigude data in BSI HDF files are signed to indicate 
+		
+	New format - 
+		
+		Latitude and longigude data in BSI HDF files are signed to indicate 
 		hemisphere. If any lat or lon values are negative, the --swap_lon key is disabled
 
 h5_generate_caches
@@ -145,6 +182,8 @@ Exploration and conversion
 
 h5_dumpmeta
 ~~~~~~~~~~~
+``h5_dumpmeta`` exports the radar metadata to a CSV file or a shapefile. 
+The actual sounding data is not included.
 
 ::
 
@@ -152,8 +191,7 @@ h5_dumpmeta
 
     Positional arguments:
 		infile	input HDF (*.h5) filename, with or without path, if you use 
-		wildcards 
-				in linux, put this in quotes
+		wildcards in linux, put this in quotes
 
     Optional arguments:
 		-o 		output file BASENAME [if missing, will be automatically 
@@ -164,11 +202,17 @@ h5_dumpmeta
 		--clobber  	overwrite existing files
 		
 
-``h5_dumpmeta`` exports the radar metadata to a CSV file. The actual sounding
-data is not included.
+h5_export
+~~~~~~~~~
+
+
+
 
 h52mat
 ~~~~~~
+``h52mat`` converts HDF data to a MATLAB ``.mat`` file. The filters from
+``h5_generate_caches`` are available. For those who prefer MATLAB, the rest of
+this document can be ignored.
 
 ::
 
@@ -184,32 +228,4 @@ h52mat
         r       remove stationary traces
         o       overwrite
         q       silence standard output
-
-``h52mat`` converts HDF data to a MATLAB ``.mat`` file. The filters from
-``h5_generate_caches`` are available. For those who prefer MATLAB, the rest of
-this document can be ignored.
-
-
-Recommended data cleaning workflow
-----------------------------------
-
-The following steps are very helpful for data cleaning and streamlining
-workflow. Also some of the steps are prerequisites for subsequent
-analyses, so **do this in the correct order**. It is really very
-important that you take notes on what you did so that your workflow
-can be recreated later. It is recommmend you open a document and copy paste
-what you did from the terminal in there for safekeeping. Also, you can
-copy the screen output there too. As you go be aware that some scripts
-will overwrite files. Recommend that you use unique file names that
-represent the step that you just completed.
-
--  ``h5_dumpmeta.py``
--  ``h5_consolidate``
--  ``h5_replace_gps.py``
--  ``h5_add_utm.py``
--  ``h5_dumpmeta.py``
--  ``h5_dumpmeta.py``
-
-Once this has been been completed the data is ready to be used in IcePick2.py, 
-which will be elaborated on in the next chapter.
 
