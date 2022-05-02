@@ -34,8 +34,8 @@ represent the step that you just completed.
 -  ``h5_dumpmeta.py`` : generate caches to speed up data access and do
 	some more metadata
 
-Once this has been been completed the data is ready to be used in IcePick2.py, 
-which will be elaborated on in the next chapter.
+Once this has been been completed the data is ready to be used for Ice Thickness
+Determination.
 
 
 Data management
@@ -219,15 +219,14 @@ h5_export
 	
 	Positional arguments:
 		{ascii,binary,reflex}	Select which format to export to - either ascii, 
-						binary or reflex	
+							binary or reflex	
 		infile				input HDF (.h5) filename, with or without path
 	
 	Optional arguments: 
-		-o OUTFILE, --outfile OUTFILE	
-						output filename, basename only NO extension; defaults to 
-						infile
-		-l LINE, --line LINE	line number to export - defaults to all
-		--clobber  	overwrite existing files
+		-o OUTFILE			output filename, basename only NO extension; 
+							defaults to infile
+		-l LINE				line number to export - defaults to all
+		--clobber			overwrite existing files
 		
 
 h52mat
@@ -245,7 +244,7 @@ this document can be ignored.
     OUTFILE is the anme of the *.mat file to be generated.
 
     Options:
-        g       fix static GPS issues
+        g		fix static GPS issues
         s       smoothen coordinates
         b       remove blank traces (trigger failure)
         r       remove stationary traces
@@ -264,7 +263,7 @@ icepick2
 
 ::
 
-``icepick2`` allows for interaction with radargrams.
+``icepick2`` allows for interaction with radargrams. See chapter 4 for full description.
 
 	SYNTAX: icepick2 <HDF_survey> [-L line_number]
 
@@ -277,14 +276,14 @@ mergepicks
 	SYNTAX: mergepicks infile outdir oldpicks [OPTIONS]
 	
 	Positional arguments:
-		infile	input HDF (.h5) filename
-		outdir	subfolder where new picking files will be written
+		infile		input HDF (.h5) filename
+		outdir		subfolder where new picking files will be written
 		oldpicks	folder where old picking files are found
 
     Optional arguments:
-		-d, --dir_cache	cache directory, default: cache/
-		-n, --newpick_priority	will priviledge new picks over old picks 
-								in case of conflict
+		-d			cache directory, default: cache/
+		-n			will priviledge new picks over old picks in case 
+					of conflict
 		--dc 		specify datacapture, default: 0
 
 joinradar
@@ -292,8 +291,37 @@ joinradar
 
 ::
 
+``join_radar`` combines information from picking, rating, offset, 
+and HDF5 files, and computes ice thickness at each valid
+observation location. You must have a subdirectory 'picking' to 
+run this script If there is no rating directory, all picks will be 
+processed with a rating of '-9' If there is a rating directory, ONLY 
+lines with ratings will be processed. If there is no offsets directory, 
+you can specify --offset that will be applied to all traces Caution--
+This script will overwrite files in the results subdirectory.
+
+	SYNTAX: join_radar.py [-h] [-v VELOCITY] [-q QUAL_MIN] [-c] [-w] [-o OFFSET] [-n] infile
+	
+	Positional Arguments:
+		infile				input HDF (*.h5) filename, with or without path
+
+	Optional Arguments:
+		-v VELOCITY		radar velocity in ice, defaults to 1.68e8 m/s
+		-q QUAL_MIN		the minimum rating value to include 1 to 5 (defaults to -9, 
+						which signifies unrated picks)
+		-c				create csv file with fid,lon,lat,elev,thickness,error
+		-w				create a waypoint shapefile
+		-o OFFSET		if no offsets directory exists, provide antenna offset (m) 
+						for all traces
+		-n				remove any trace that has no thickness data
 
 
 icerate
 ~~~~~~~
-See chapter 5 for full decription.
+
+::
+
+``icerate`` is a tool that evaluates the quality of picks, see chapter 5 for 
+full decription.
+
+	SYNTAX: icerate -f file_name [-L line_number] [--pick pick_filename]

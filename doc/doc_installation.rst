@@ -17,24 +17,24 @@ These steps will set up and manage your Python environment and
 dependencies for irlib.  For more on the dependencies themselves, see below.
 
 1.  Install Anaconda or Miniconda Python 3 64-bit
-2.  Open conda prompt **as an administrator** or with **write
+2.  Open the *Anaconda Prompt* **as an administrator** or with **write
    permissions** to the conda directory and create an environment
    specifically to use irlib (Run one of these options):
 
-		Use the environment file in the repository (spyder-kernels=1.9 here will also go OUT OF
-		DATE as the Spyder package evolves):
+	Use the environment file in the repository (spyder-kernels=1.9 here will also go OUT OF
+	DATE as the Spyder package evolves):
 		
 		``conda create -n environment.yml``
 
-		This will be a bare-bones installation to run irlib:
+	This will be a bare-bones installation to run irlib:
 		
 		``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas``
 
-		As above but also installs vitables, an hdf viewer, sphinx and spyder-kernels to
-		allow you to use spyder to run and debug the code (but only if you set the interpreter 
-		to the correct environment). The trick with spyder is that the spyder-kernels version must be
-		supported by your version of spyder. You may want to pin the spyder-kernels version (and/or 
-		your python version) like (This will go OUT OF DATE as spyder moves forward, the following works with spyder 4):
+	As above but also installs vitables, an hdf viewer, sphinx and spyder-kernels to
+	allow you to use spyder to run and debug the code (but only if you set the interpreter 
+	to the correct environment). The trick with spyder is that the spyder-kernels version must be
+	supported by your version of spyder. You may want to pin the spyder-kernels version (and/or 
+	your python version) like (This will go OUT OF DATE as spyder moves forward, the following works with spyder 4):
 		
 		``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas sphinx vitables spyder-kernels``
 
@@ -122,9 +122,7 @@ irlib conda environment.
 
  ``conda activate irlib``
  
- ``conda develop`` 
-
-Where is where the irlib code is located
+ ``conda develop [irlib code location]`` 
 
 -  You may need to restart conda or reactivate irlib environment for
    this to take effect.
