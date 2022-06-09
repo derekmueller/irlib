@@ -22,20 +22,16 @@ copy the screen output there too. As you go be aware that some scripts
 will overwrite files. Recommend that you use unique file names that
 represent the step that you just completed.
 
--  ``h5_dumpmeta.py`` : examine metadata, visualize on a GPS
--  ``h5_consolidate`` : combining h5 files streamlines workflow, take notes
-	of the lines you want to work with 
--  ``h5_replace_gps.py`` : if you have better GPS data use it to refine
-	position
--  ``h5_add_utm.py`` : allows irlib to calculate distances easier using 
-	cartesian coordinates
--  ``h5_dumpmeta.py`` : check that all is well by comaring to earlier
-	metadata
--  ``h5_dumpmeta.py`` : generate caches to speed up data access and do
-	some more metadata
 
-Once this has been been completed the data is ready to be used for Ice Thickness
-Determination.
+*  ``h5_dumpmeta.py`` : examine metadata, visualize on a GPS 
+*  ``h5_consolidate.py`` : combining h5 files streamlines workflow, take notes of the lines you want to work with 
+*  ``h5_replace_gps.py`` : if you have better GPS data use it to refine position 
+*  ``h5_add_utm.py`` : allows irlib to calculate distances easier using Cartesian coordinates 
+*  ``h5_dumpmeta.py`` : check that all is well by comparing to earlier metadata
+*  ``h5_dumpmeta.py`` : generate caches to speed up data access and do some more metadata
+
+Once this has been been completed the data is ready to be used for ice thickness
+determination.
 
 
 Data management
@@ -46,16 +42,17 @@ h5_consolidate
 
 ::
 
-``h5_consolidate`` combines multiple datasets into a single dataset. In the
+h5_consolidate combines multiple datasets into a single dataset. In the
 process, lines are re-numbered so that they stay in sequential order.
 Concatenating datasets is useful, for example, to combine multiple surveys
 collected on different days into a single file that is easier to manage (but
 larger).
 
-    SYNTAX: h5_consolidate INFILE1 INFILE2 [...] -o OUTFILE
+    SYNTAX: h5_consolidate.py [-h] [-o OUTFILE] [infile ...]
 
 		Combines multiple datasets (>1) into a single concatenated dataset.
 
+You can list the infiles you want to combine in order or use a wildcard.
 
 h5_replace_gps
 ~~~~~~~~~~~~~~
@@ -69,7 +66,7 @@ which is a standard open format. Calling ``h5_replace_gps`` creates a copy of
 the original dataset with the new coordinates inserted. Command-line flags can
 be used to specify matching tolerances and which lines to work on.
 
-    SYNTAX: h5_replace_gps infile outfile gpsfile {gpx,ppp} {iprgps,iprpc,both} [OPTIONS]
+    SYNTAX: h5_replace_gps.py [-h] [-t TZOFFSET] [-l LINE] [-d DELTATIMEMAX] [-o OFFSETELEV] [-n] [-p] infile outfile gpsfile {gpx,ppp} {iprgps,iprpc,both}
 	
 		This tool replaces the existing geographical data in a ice radar HDF
 		database with data taken from a GPX file, e.g. obtained from a handheld or
@@ -77,17 +74,11 @@ be used to specify matching tolerances and which lines to work on.
 		GPS data
 
 	Positional arguments:
-		infile				input HDF (.h5) filename, with or without path, 
-						for which GPS or PC timestamps exist
-		outfile				output HDF (.h5) filename, with or without path, 
-						if this file exists, it will be overwritten
-		gpsfile				GPS filename(s), with enhanced location, with or 
-						without path / wildcards
-		{gpx,ppp}			Select which format the gps file is in - either 
-						gpx or ppp
-		{iprgps,iprpc,both}	Select which timestamp to match gps timestamps to 
-		                    - iprgps (recommended), iprpc (if iprgps not available) 
-							or both (use caution)
+		-infile		input HDF (.h5) filename, with or without path, for which GPS or PC timestamps exist
+		-outfile		output HDF (.h5) filename, with or without path, if this file exists, it will be overwritten
+		-gpsfile		GPS filename(s), with enhanced location, with or without path / wildcards
+		-gpx_ppp		Select which format the gps file is in - either gpx or ppp
+		-iprgps_iprpc_both	Select which timestamp to match gps timestamps to: iprgps (recommended), iprpc (if iprgps not available) or both (use caution)
 
     Optional arguments:
 		-t hh 	The hour offset (hh) of the GPR computer from UTC (default = 0)
@@ -109,13 +100,13 @@ h5_add_utm
 
 ::
 
-``h5_add_utm`` uses the *pyproj* library to append projected UTM zone
+h5_add_utm uses the *pyproj* library to append projected UTM zone
 coordinates to datasets that only include lon-lat coordinates. This is a
 required step for many of the data processing operations that might be used
 later.
 
 
-    SYNTAX: h5_add_utm INFILE OUTFILE
+    SYNTAX: h5_add_utm.py [-h] [--swap_lon] [--swap_lat] infile outfile
 
         Replaces geographical coordinates in INFILE with UTM coordinates
         in OUTFILE. Does not perform any datum shift. Projection is calculated
@@ -144,21 +135,22 @@ h5_generate_caches
 
 ::
 
-    SYNTAX: h5_generate_caches HDF_SURVEY [OPTIONS]
+When it is time to do your picking this step will make the data handling more efficient.  There are also some important data cleaning steps here that are helpful. 
+
+    SYNTAX: h5_generate_caches.py [-h] [-d DIR_CACHE] [-r REMOVE_WITHIN] [--dc DC] [-n] [-i] [-s] [-b] [-g] [-f] [-q] [-v] infile
 
         -d [DIR]    cache directory (default: cache/)
         -g          fix static GPS issues
         -s          smoothen coordinates
         -b          remove blank traces caused by triggering failure
-        -r          remove stationary traces by averaging all traces within # m 
-					(defaults to 0 m or off), recommend 3 for L1 GPS
+        -r          remove stationary traces by averaging all traces within # m (defaults to 0 m or off), recommend 3 for L1 GPS
         -f          force regeneration of existing caches
         -q          silence standard output
         -e          print failed datacaptures
-        --dc=[#]    specify datacapture (default: 0)
-		-n 			remove traces with NaN coordinates
-		-i			interpolate over NaN coordinates (overrides -n)
-		-v			print failed datacaptures
+        -dc=[#]    specify datacapture (default: 0)
+	-n          remove traces with NaN coordinates
+	-i          interpolate over NaN coordinates (overrides -n)
+	-v          print failed datacaptures
 
 Caching improves performance and is a very good idea. ``h5_generate_caches``
 creates caches (``.ird`` files) for every line within a survey, and optionally
@@ -187,15 +179,13 @@ h5_dumpmeta
 
 ::
 
-``h5_dumpmeta`` exports the radar metadata to a CSV file or a shapefile. 
-The actual sounding data is not included.
+h5_dumpmeta exports the radar metadata to a CSV file or a shapefile. The actual sounding data is not included.
 
 
-    SYNTAX: h5_dumpmeta infile [OPTIONS]
+    SYNTAX: h5_dumpmeta.py [-h] [-o OUTFILE] [-c] [-w] [-l] [--clobber] infile
 
     Positional arguments:
-		infile	input HDF (*.h5) filename, with or without path, if you use 
-		wildcards in linux, put this in quotes
+		-infile	input HDF (*.h5) filename, with or without path, if you use wildcards in linux, put this in quotes
 
     Optional arguments:
 		-o 		output file BASENAME [if missing, will be automatically 
@@ -211,21 +201,19 @@ h5_export
 
 ::
 
-``h52a.py`` exports a line from HDF5 to an ASCII, REFLEX or BINARY file.
+h5_export.py exports a line from HDF5 to an ASCII, REFLEX or BINARY file.
 
 
-	SYNTAX: h5_export.py [-h] [-o OUTFILE] [-l LINE] [--clobber] 
-	{ascii,binary,reflex} infile
+	SYNTAX: h5_export.py [-h] [-o OUTFILE] [-l LINE] [--clobber] {ascii,binary,reflex} infile
 	
 	Positional arguments:
-		{ascii,binary,reflex}	Select which format to export to - either ascii, 
-							binary or reflex	
-		infile				input HDF (.h5) filename, with or without path
+		-ascii_binary_reflex	        Select which format to export to - either ascii, binary or reflex
+		-infile			input HDF (.h5) filename, with or without path
 	
 	Optional arguments: 
 		-o OUTFILE			output filename, basename only NO extension; 
 							defaults to infile
-		-l LINE				line number to export - defaults to all
+		-l LINE			line number to export - defaults to all
 		--clobber			overwrite existing files
 		
 
@@ -234,7 +222,7 @@ h52mat
 
 ::
 
-``h52mat`` converts HDF data to a MATLAB ``.mat`` file. The filters from
+h52mat converts HDF data to a MATLAB ``.mat`` file. The filters from
 ``h5_generate_caches`` are available. For those who prefer MATLAB, the rest of
 this document can be ignored.
 
@@ -244,12 +232,12 @@ this document can be ignored.
     OUTFILE is the anme of the *.mat file to be generated.
 
     Options:
-        g		fix static GPS issues
-        s       smoothen coordinates
-        b       remove blank traces (trigger failure)
-        r       remove stationary traces
-        o       overwrite
-        q       silence standard output
+        -g       fix static GPS issues
+        -s       smoothen coordinates
+        -b       remove blank traces (trigger failure)
+        -r       remove stationary traces
+        -o       overwrite
+        -q       silence standard output
 
 
 Thickness Determination
@@ -263,7 +251,7 @@ icepick2
 
 ::
 
-``icepick2`` allows for interaction with radargrams. See chapter 4 for full description.
+icepick2 allows for interaction with radargrams. See chapter 4 for full description.
 
 	SYNTAX: icepick2 <HDF_survey> [-L line_number]
 
@@ -273,32 +261,32 @@ mergepicks
 
 ::
 
-	SYNTAX: mergepicks infile outdir oldpicks [OPTIONS]
+This script allows users to reprocess older picks if, for example, the preprocessing steps were changed.  The script goes through the FIDs for the new (reprocessed) input h5 file and creates picking files that include the older picks. 
+
+	SYNTAX: mergepicks.py [-h] [-d DIR_CACHE] [-n] [--dc DC] infile outdir oldpicks
 	
 	Positional arguments:
-		infile		input HDF (.h5) filename
-		outdir		subfolder where new picking files will be written
-		oldpicks	folder where old picking files are found
+		-infile		input HDF (.h5) filename
+		-outdir		subfolder where new picking files will be written
+		-oldpicks		folder where old picking files are found
 
     Optional arguments:
 		-d			cache directory, default: cache/
 		-n			will priviledge new picks over old picks in case 
 					of conflict
-		--dc 		specify datacapture, default: 0
+		--dc 			specify datacapture, default: 0
 
 joinradar
 ~~~~~~~~~
 
 ::
 
-``join_radar`` combines information from picking, rating, offset, 
-and HDF5 files, and computes ice thickness at each valid
-observation location. You must have a subdirectory 'picking' to 
-run this script If there is no rating directory, all picks will be 
-processed with a rating of '-9' If there is a rating directory, ONLY 
-lines with ratings will be processed. If there is no offsets directory, 
-you can specify --offset that will be applied to all traces Caution--
-This script will overwrite files in the results subdirectory.
+join_radar combines information from picking, rating, offset, 
+and HDF5 files, and computes ice thickness at each valid observation location. You must have a subdirectory 'picking' to 
+run this script If there is no rating directory, all picks will be processed with a rating of '-9' If there is a rating directory, ONLY 
+lines with ratings will be processed. If there is no offsets directory, you can specify --offset that will be applied to all traces 
+
+Caution -- This script will overwrite files in the results subdirectory.
 
 	SYNTAX: join_radar.py [-h] [-v VELOCITY] [-q QUAL_MIN] [-c] [-w] [-o OFFSET] [-n] infile
 	
@@ -321,7 +309,7 @@ icerate
 
 ::
 
-``icerate`` is a tool that evaluates the quality of picks, see chapter 5 for 
+icerate is a tool that evaluates the quality of picks, see chapter 5 for 
 full decription.
 
 	SYNTAX: icerate -f file_name [-L line_number] [--pick pick_filename]

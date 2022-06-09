@@ -17,12 +17,10 @@ These steps will set up and manage your Python environment and
 dependencies for irlib.  For more on the dependencies themselves, see below.
 
 1.  Install Anaconda or Miniconda Python 3 64-bit
-2.  Open the *Anaconda Prompt* **as an administrator** or with **write
-   permissions** to the conda directory and create an environment
-   specifically to use irlib (Run one of these options):
+2.  Open the *Anaconda Prompt* **as an administrator** or with **write permissions** to 
+    the conda directory and create an environment specifically to use irlib (Run one of these options):
 
-	Use the environment file in the repository (spyder-kernels=1.9 here will also go OUT OF
-	DATE as the Spyder package evolves):
+	Use the environment file in the repository:
 		
 		``conda create -n environment.yml``
 
@@ -30,16 +28,9 @@ dependencies for irlib.  For more on the dependencies themselves, see below.
 		
 		``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas``
 
-	As above but also installs vitables, an hdf viewer, sphinx and spyder-kernels to
-	allow you to use spyder to run and debug the code (but only if you set the interpreter 
-	to the correct environment). The trick with spyder is that the spyder-kernels version must be
-	supported by your version of spyder. You may want to pin the spyder-kernels version (and/or 
-	your python version) like (This will go OUT OF DATE as spyder moves forward, the following works with spyder 4):
+	As above but also installs vitables, an hdf viewer, and sphinx with numpydoc (for documentation):
 		
-		``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas sphinx vitables spyder-kernels``
-
-
-		``conda create -n irlib -c conda-forge python=3.8 h5py scipy matplotlib cython geopandas vitables spyder-kernels=1.9``
+		``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas sphinx vitables numpydoc``
 
 3.  To run irlib you need to work out of a conda-aware console and type, *this must be done before every session*:
 
@@ -66,9 +57,7 @@ have git installed you can type the following in the terminal:
 
     >> git clone git@github.com:njwilson23/irlib.git
 
-This makes a directory in your home folder called py/irlib-main. I renamed this to 'irlib' for simplicity. Note: 
-if you are going away from the internet, make a copy of the irlib zip file or directory for safekeeping. If you
-start messing around, it's good to get the original back without any fuss.
+This makes a directory in your home folder called py/irlib. Note: if you are going away from the internet, make a copy of the irlib zip file or directory for safekeeping. If you start messing around, it's good to get the original back without any fuss.
 
 
 Set the operating system path
@@ -106,7 +95,7 @@ To view you current operating system path:
 
 ``echo %PATH%``
 
-Alternativly, on Windows, one should be able to modify the *Path* variable by right clicking
+Alternatively, on Windows, one should be able to modify the *Path* variable by right clicking
 on **My Computer** and going to *Properties -> Advanced System Settings ->
 Environment Variables*.
 
@@ -149,10 +138,11 @@ Then see if it works with an h5 file (in this example it is called
 
 It will output some metadata to the screen.
 
-If that doesn't work: 
-- check your conda environment is activated
-- check your paths are set 
-- make sure that the python files are executable
+If that doesn't work:
+
+*  check your conda environment is activated
+*  check your paths are set
+*  make sure that the python files are executable
 
 
 Dependencies
@@ -172,11 +162,11 @@ Python ecosystem. The following are *required*:
 .. _pandas: https://pandas.pydata.org/
 .. _geopandas: https://geopandas.org/ 
 .. _Cython: http://cython.org/
-.. _Spyder: https://www.spyder-ide.org/
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
 .. _Vitables: https://vitables.org/
 .. _Github: http://njwilson23.github.com/radar_tools
 .. _gstat: http://www.gstat.org/
+.. _numpydoc: https://numpydoc.readthedocs.io/en/latest/index.html
 
 
 - Python_ : Already installed for Linux/Mac OS X users
@@ -197,11 +187,11 @@ Python ecosystem. The following are *required*:
 
 Finally, these are *nice to have*:
 
-- Spyder_ : Interactive developlment environment if you plan on debugging and edition code. 
-
 - Sphinx_ : Documentation generator library. 
 
-- Vitables_ : An hdf viewer to look at the structure of h5 files more visually.
+- numpydoc_ : A sphinx extension containing styling.
+
+- Vitables_ : An hdf viewer to look at the structure of h5 files more visually. (you can also use hdfview or another alternative)
 
 
 
