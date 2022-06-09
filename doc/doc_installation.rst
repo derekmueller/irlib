@@ -9,7 +9,6 @@ Follow the conda instructions followed by Linux or Windows instructions
 depending on your system. Mac should be similar to linux. The source
 code is on github at https://github.com/njwilson23/irlib
 
-There are 5 steps:
 
 Setup a conda environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -17,24 +16,32 @@ Setup a conda environment
 These steps will set up and manage your Python environment and
 dependencies for irlib.  For more on the dependencies themselves, see below.
 
--  Install Anaconda or Miniconda python 3 64-bit
--  Open conda prompt **as an administrator** or with **write
+1.  Install Anaconda or Miniconda Python 3 64-bit
+2.  Open the *Anaconda Prompt* **as an administrator** or with **write
    permissions** to the conda directory and create an environment
    specifically to use irlib (Run one of these options):
 
--  This will be a bare-bones installation to run irlib
+	Use the environment file in the repository (spyder-kernels=1.9 here will also go OUT OF
+	DATE as the Spyder package evolves):
+		
+		``conda create -n environment.yml``
 
-``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas``
+	This will be a bare-bones installation to run irlib:
+		
+		``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas``
 
--  As above but also installs vitables, an hdf viewer and sphinx:
+	As above but also installs vitables, an hdf viewer, sphinx and spyder-kernels to
+	allow you to use spyder to run and debug the code (but only if you set the interpreter 
+	to the correct environment). The trick with spyder is that the spyder-kernels version must be
+	supported by your version of spyder. You may want to pin the spyder-kernels version (and/or 
+	your python version) like (This will go OUT OF DATE as spyder moves forward, the following works with spyder 4):
+		
+		``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas sphinx vitables spyder-kernels``
 
-``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas sphinx vitables numpydoc``
 
--  Or use the environment file in the repository:
+		``conda create -n irlib -c conda-forge python=3.8 h5py scipy matplotlib cython geopandas vitables spyder-kernels=1.9``
 
-``conda create -n environment.yml``
-
--  To run irlib you need to work out of a conda-aware console and type:
+3.  To run irlib you need to work out of a conda-aware console and type, *this must be done before every session*:
 
 ``conda activate irlib``
 
@@ -42,10 +49,9 @@ dependencies for irlib.  For more on the dependencies themselves, see below.
 Make an irlib directory
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-This example shows how to create a folder called 'py' in your own home
-directory with irlib files in it, however, you can install irlib wherever you
-wish (including within the conda environment folders). Make a directory
-called 'py' in your home folder. This will hold the irlib directory. Change 
+To follow this example create a folder called 'py' in your own home
+directory and follow directions to add irlib files in it. However, you can install irlib wherever you
+wish (including within the conda environment folders). Once you have decided where to put irlib, change 
 directory into that folder.
 
 
@@ -58,13 +64,11 @@ have git installed you can type the following in the terminal:
 
 ::
 
-    git clone git@github.com:njwilson23/irlib.git
+    >> git clone git@github.com:njwilson23/irlib.git
 
-This makes a directory in your home folder called py/irlib Note: 
-make a copy of the irlib zip file or directory for safekeeping. If you
-start messing around, it's good to get the original back without any
-fuss (mostly important in the field if you are not near internet).
-
+This makes a directory in your home folder called py/irlib-main. I renamed this to 'irlib' for simplicity. Note: 
+if you are going away from the internet, make a copy of the irlib zip file or directory for safekeeping. If you
+start messing around, it's good to get the original back without any fuss.
 
 
 Set the operating system path
@@ -79,14 +83,12 @@ your data files are located).
 Instructions assume you are using Bash and you installed to
 the directory from the example above.
 
-Find the hidden .bashrc file and open it in an editor. At the
-      bottom of this file type and then save the file:
+Find the hidden .bashrc file and open it in an editor. At the bottom of this file type and then save the file:
 
 | ``# Set path for irlib python scripts HERE``
-| ``export PATH=$PATH:~/py/irlib``
+| ``export PATH=$PATH:~/py/irlib-master``
 
-Then, in a terminal, type the following to make the change
-      permanent:
+Then, in a terminal, type the following to make the change permanent:
 
 ``source .bashrc``
 
@@ -104,6 +106,10 @@ To view you current operating system path:
 
 ``echo %PATH%``
 
+Alternativly, on Windows, one should be able to modify the *Path* variable by right clicking
+on **My Computer** and going to *Properties -> Advanced System Settings ->
+Environment Variables*.
+
 
 Set the conda environment path
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -115,9 +121,8 @@ irlib conda environment.
    always available. In a terminal type:
 
  ``conda activate irlib``
- ``conda develop`` 
-
-Where is where the irlib code is located
+ 
+ ``conda develop [irlib code location]`` 
 
 -  You may need to restart conda or reactivate irlib environment for
    this to take effect.
@@ -144,8 +149,10 @@ Then see if it works with an h5 file (in this example it is called
 
 It will output some metadata to the screen.
 
-If that doesn't work, check your environment is activated, your paths
-are set and make sure that the python files are executable.
+If that doesn't work: 
+- check your conda environment is activated
+- check your paths are set 
+- make sure that the python files are executable
 
 
 Dependencies
@@ -165,11 +172,11 @@ Python ecosystem. The following are *required*:
 .. _pandas: https://pandas.pydata.org/
 .. _geopandas: https://geopandas.org/ 
 .. _Cython: http://cython.org/
+.. _Spyder: https://www.spyder-ide.org/
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
 .. _Vitables: https://vitables.org/
 .. _Github: http://njwilson23.github.com/radar_tools
 .. _gstat: http://www.gstat.org/
-.. _numpydoc: https://numpydoc.readthedocs.io/en/latest/index.html
 
 
 - Python_ : Already installed for Linux/Mac OS X users
@@ -190,18 +197,21 @@ Python ecosystem. The following are *required*:
 
 Finally, these are *nice to have*:
 
+- Spyder_ : Interactive developlment environment if you plan on debugging and edition code. 
+
 - Sphinx_ : Documentation generator library. 
 
-- numpydoc_ : A sphinx extension containing styling.
-
-- Vitables_ : An hdf viewer to look at the structure of h5 files more visually. (you can also use hdfview or another alternative)
+- Vitables_ : An hdf viewer to look at the structure of h5 files more visually.
 
 
 
 Alternative installations
 -------------------------
+These instructions are based on older versions of irlib and have not been tested on version 0.5.
 
-Using a package manager (e.g. APT, rpm, pacman, or Homebrew) download all the dependencies above
+
+Using a package manager (e.g. APT, rpm, pacman, or Homebrew) download all the dependencies 
+listed above.
 
 
 The latest version is on Github_. After downloading either directly or using the
@@ -209,9 +219,9 @@ command
 
 ::
 
-    git clone git@github.com:njwilson23/irlib.git
+    >> git clone git@github.com:njwilson23/irlib.git
 
-Installation is best done with ``pip``, the Python package manager.
+Installation can be done with ``pip``, a Python package manager.
 
 ::
 
@@ -226,8 +236,6 @@ To use the *pywavelet* wavelet transform algorithms, navigate to
 to move the created file ``pywavelet.so`` to some place from which it can be
 imported.
 
-Installing manually
-~~~~~~~~~~~~~~~~~~~
 
 Alternatively, *irlib* can be build in place without ``pip`` by doing
 
@@ -235,19 +243,9 @@ Alternatively, *irlib* can be build in place without ``pip`` by doing
 
     >> python setup.py build_ext --inplace
 
-Path
-~~~~
 
 For convenience, programs that make up *radar\_tools* should be on the execution
-``PATH``. If ``pip`` was used, this should be taken care of. Otherwise, on Linux
-and Mac OS X, one can add the following line to the ``.bashrc``:
-
-::
-
-    export PATH=$PATH:~/python/irlib
-
-On Windows, one should be able to modify the *Path* variable by right clicking
-on **My Computer** and going to *Properties -> Advanced System Settings ->
-Environment Variables*.
+``PATH``. If ``pip`` was used, this should be taken care of. Otherwise, follow instructions
+in section 2.1.4 above.
 
 

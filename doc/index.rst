@@ -52,20 +52,20 @@ this, an **intermediate user** might wish to follow the in-depth tutorial.
 At the end of the manual there are topics for **advanced users and developpers**. 
 
 **Beginner User**
-Introduction
-Installation
-Command-line Utilities
-IcePick2
-icerate
+- Introduction
+- Installation
+- Command-line Utilities
+- IcePick2
+- icerate (optional)
 
 **Intermediate User**
-Tutorial
+- Tutorial
 
 **Advanced Users and Developpers**
-Changes in IEI h5 file format
-Adding customized filters to the irlib GUI apps
-Documentation
-irlib API
+- Changes in IEI h5 file format
+- Adding customized filters to the irlib GUI apps
+- Documentation
+- irlib API
 
 .. introduction is above... next installation
 
