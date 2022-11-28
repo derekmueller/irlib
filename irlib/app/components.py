@@ -100,6 +100,10 @@ class Radargram(AppWindow):
     def _newline(self, L):
         """ Replace internal state with a new radar line, discarding all
         digitizing and feature information and redrawing. """
+        if L.data.size == 0:  #sometimes data are missing from the entire line
+            print("\n\n --- Warning:  No data exists in this line, please try loading another line with the open command ---  \n")
+            L = None
+            return
         self.rate = L.metadata.sample_rate[0]
         self.L = L
         self.data = L.data
@@ -434,6 +438,12 @@ class PickWindow(AppWindow):
     def _newline(self, L):
         """ Replace internal state with a new radar line, discarding all
         digitizing and feature information and redrawing. """
+
+        if L.data.size == 0:  #sometimes data are missing from the entire line
+            print("\n\n --- Warning:  No data exists in this line, please try loading another line with the open command ---  \n")
+            L = None
+            return
+
         self.rate = L.metadata.sample_rate[0]
         self.L = irlib.PickableGather(L)
         self.data = L.data
@@ -757,6 +767,12 @@ class MapWindow(AppWindow):
     def _newline(self, L):
         """ Replace internal state with a new radar line, discarding all
         digitizing and feature information and redrawing. """
+
+        if L.data.size == 0:  #sometimes data are missing from the entire line
+            print("\n\n --- Warning:  No data exists in this line, please try loading another line with the open command ---  \n")
+            L = None
+            return
+
         self.L = L
         self.x = L.metadata.eastings
         self.y = L.metadata.northings

@@ -37,6 +37,9 @@ class PickOn(PickCommandBase):
     helpstr = "\tOpen a PickWindow.\n"
 
     def apply(self, app, args):
+        if app.line.data.size == 0:  #sometimes data are missing from the entire line
+            print("\n\n --- Warning:  No data exists in this line, please try loading another line with the open command ---  \n")
+            return
         w = PickWindow(app.line)
         w.connect_radargram(app.get_appwindows(Radargram)[0])
         app.appwindows.append(w)

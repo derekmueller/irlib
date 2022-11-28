@@ -44,6 +44,11 @@ class PrintInfo(Command):
     def apply(self, app, args):
         print(app.survey.datafile)
         print('line: ' + str(app.line.line))
+        
+        if app.line.data.size == 0:  #sometimes data are missing from the entire line
+            print("\n\n --- Warning:  No data exists in this line, please try loading another line with the open command ---  \n")
+            return
+
         try:
             print('channel: ' + str(app.line.datacapture))
         except AttributeError:
