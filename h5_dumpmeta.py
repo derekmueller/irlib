@@ -73,6 +73,7 @@ parser.add_argument("-o", "--outfile", help="output file BASENAME [if missing, w
 parser.add_argument("-c", "--csv", help="create csv metadata file", action="store_true")
 parser.add_argument("-w", "--wpt", help="create a waypoint metadata shapefile", action="store_true")
 parser.add_argument("-l", "--line", help="create a line metadata shapefile", action="store_true")
+parser.add_argument("-g", "--geojson", help="create waypoint or line metadata in GeoJSON format, not shapefile", action="store_true")
 parser.add_argument("--clobber", help="overwrite existing files", action="store_true")
 args = parser.parse_args()
 
@@ -121,7 +122,7 @@ for i, infile in enumerate(infiles):
                         fnm=os.path.basename(outfiles[i]+'.csv')))
             else:
                 sys.stderr.write(
-                    "\t{fnm} already exists\n".format(
+                    "\t{fnm} exists and was not overwritten\n".format(
                         fnm=os.path.basename(outfiles[i]+'.csv')))
        
 
@@ -137,22 +138,43 @@ for i, infile in enumerate(infiles):
             continue
         pts_gd=gpd.GeoDataFrame(meta,geometry=gpd.points_from_xy(
                 meta.lon.astype(float), meta.lat.astype(float),z=meta.alt_asl, crs=proj))
-                            
-        if not os.path.isfile(outfiles[i]+"_wpt.shp"):
-            pts_gd.to_file(outfiles[i]+"_wpt.shp")
-            sys.stderr.write(
-                    "\t{fnm} written\n".format(
-                    fnm=os.path.basename(outfiles[i]+"_wpt.shp")))
-        else:    
-            if args.clobber:
-                pts_gd.to_file(outfiles[i]+"_wpt.shp")
-                sys.stderr.write(
-                    "\t{fnm} overwritten\n".format(
-                    fnm=os.path.basename(outfiles[i]+"_wpt.shp")))
-            else:
-                sys.stderr.write(
-                   "\t{fnm} exists and was not overwritten\n".format(
-                   fnm=os.path.basename(outfiles[i]+"_wpt.shp")))
+        
+        if not args.geojson:                                 
+            if not os.path.isfile(outfiles[i]+"_wpt.shp"):
+                    pts_gd.to_file(outfiles[i]+"_wpt.shp")
+                    sys.stderr.write(
+                            "\t{fnm} written\n".format(
+                                fnm=os.path.basename(outfiles[i]+"_wpt.shp")))
+            else:    
+                if args.clobber:
+                    pts_gd.to_file(outfiles[i]+"_wpt.shp")
+                    sys.stderr.write(
+                        "\t{fnm} overwritten\n".format(
+                        fnm=os.path.basename(outfiles[i]+"_wpt.shp")))
+                else:
+                    sys.stderr.write(
+                       "\t{fnm} exists and was not overwritten\n".format(
+                       fnm=os.path.basename(outfiles[i]+"_wpt.shp")))
+
+        else: # GeoJSON                           
+            if not os.path.isfile(outfiles[i]+"_wpt.geojson"):
+                    pts_gd.to_file(outfiles[i]+"_wpt.geojson", driver="GeoJSON")
+                    sys.stderr.write(
+                            "\t{fnm} written\n".format(
+                                fnm=os.path.basename(outfiles[i]+"_wpt.geojson")))
+            else:    
+                if args.clobber:
+                    pts_gd.to_file(outfiles[i]+"_wpt.gpkg", driver="GeoJSON")
+                    sys.stderr.write(
+                        "\t{fnm} overwritten\n".format(
+                        fnm=os.path.basename(outfiles[i]+"_wpt.geojson")))
+                else:
+                    sys.stderr.write(
+                       "\t{fnm} exists and was not overwritten\n".format(
+                       fnm=os.path.basename(outfiles[i]+"_wpt.geojson")))
+
+
+                       
                         
     if args.line:
         # Create a shapefile for the metadata - lines only
@@ -174,21 +196,37 @@ for i, infile in enumerate(infiles):
             index_list.append(ln)
             geometry_list.append(line)
         line_gd=gpd.GeoDataFrame(index=index_list,crs=proj,geometry=geometry_list)
-                    
-        if not os.path.isfile(outfiles[i]+"_ln.shp"):
-            line_gd.to_file(outfiles[i]+"_ln.shp")
-            sys.stderr.write(
-                "\t{fnm} written\n".format(
-                    fnm=os.path.basename(outfiles[i]+"_ln.shp")))
-        else:            
-            if args.clobber:
+
+        if not args.geojson:   #shapefile          
+            if not os.path.isfile(outfiles[i]+"_ln.shp"):
                 line_gd.to_file(outfiles[i]+"_ln.shp")
                 sys.stderr.write(
-                    "\t{fnm} overwritten\n".format(
+                    "\t{fnm} written\n".format(
                         fnm=os.path.basename(outfiles[i]+"_ln.shp")))
-            else:
+            else:            
+                if args.clobber:
+                    line_gd.to_file(outfiles[i]+"_ln.shp")
+                    sys.stderr.write(
+                        "\t{fnm} overwritten\n".format(
+                            fnm=os.path.basename(outfiles[i]+"_ln.shp")))
+                else:
+                    sys.stderr.write(
+                        "\t{fnm} exists and was not overwritten\n".format(
+                        fnm=os.path.basename(outfiles[i]+"_ln.shp")))
+        else:   # geojson          
+            if not os.path.isfile(outfiles[i]+"_ln.geojson"):
+                line_gd.to_file(outfiles[i]+"_ln.geojson", driver="GeoJSON")
                 sys.stderr.write(
-                    "\t{fnm} exists and was not overwritten\n".format(
-                    fnm=os.path.basename(outfiles[i]+"_ln.shp")))
-                
-                
+                    "\t{fnm} written\n".format(
+                        fnm=os.path.basename(outfiles[i]+"_ln.geojson")))
+            else:            
+                if args.clobber:
+                    line_gd.to_file(outfiles[i]+"_ln.geojson", driver="GeoJSON")
+                    sys.stderr.write(
+                        "\t{fnm} overwritten\n".format(
+                            fnm=os.path.basename(outfiles[i]+"_ln.geojson")))
+                else:
+                    sys.stderr.write(
+                        "\t{fnm} exists and was not overwritten\n".format(
+                        fnm=os.path.basename(outfiles[i]+"_ln.geojson")))                    
+                        
