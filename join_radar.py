@@ -26,13 +26,16 @@ import argparse
 
 ###### DECLARATIONS #######
 
+
 def time2depth(t, x, v=1.68e8):
-    """ Perform normal moveout and time-to-depth conversion. """
-    return round(np.sqrt((t**2 * v**2/4.0) - (x**2/4.0)), 2)
-    
+    """Perform normal moveout and time-to-depth conversion."""
+    return round(np.sqrt((t**2 * v**2 / 4.0) - (x**2 / 4.0)), 2)
+
+
 def zero_time_correction(x):
-    """ Return the airwave travel time over x. """
+    """Return the airwave travel time over x."""
     return x / 3e8
+
 
 ###### MAIN PROGRAM #######
 
@@ -49,181 +52,224 @@ HDF5 files, and computes ice thickness at each valid observation location.
 
 parser = argparse.ArgumentParser(description=prog_descr)
 parser.add_argument("infile", help="input HDF (*.h5) filename, with or without path")
-parser.add_argument("-v", "--velocity", help="radar velocity in ice (defaults to 1.68e8 m/s)", default=1.68e8, type=float)
-parser.add_argument("-q", "--qual_min", help="the minimum rating value to include 1 to 5 (defaults to -9, which signifies unrated picks)",
-                    default=-9,type=int)
-parser.add_argument("-c", "--csv", help="create csv file with fid,lon,lat,elev,thickness,error", action="store_true")
-parser.add_argument("-w", "--wpt", help="create a waypoint shapefile", action="store_true")
-parser.add_argument("-o", "--offset", help="if no offsets directory exists, provide antenna offset (m) for all traces")
-parser.add_argument("-n", "--removeNA", help="remove any trace that has no thickness data", action='store_true')
+parser.add_argument(
+    "-v",
+    "--velocity",
+    help="radar velocity in ice (defaults to 1.68e8 m/s)",
+    default=1.68e8,
+    type=float,
+)
+parser.add_argument(
+    "-q",
+    "--qual_min",
+    help="the minimum rating value to include 1 to 5 (defaults to -9, which signifies unrated picks)",
+    default=-9,
+    type=int,
+)
+parser.add_argument(
+    "-c",
+    "--csv",
+    help="create csv file with fid,lon,lat,elev,thickness,error",
+    action="store_true",
+)
+parser.add_argument(
+    "-w", "--wpt", help="create a waypoint shapefile", action="store_true"
+)
+parser.add_argument(
+    "-o",
+    "--offset",
+    help="if no offsets directory exists, provide antenna offset (m) for all traces",
+)
+parser.add_argument(
+    "-n",
+    "--removeNA",
+    help="remove any trace that has no thickness data",
+    action="store_true",
+)
 
 args = parser.parse_args()
 
 h5file = args.infile
-if h5file.endswith('.h5'):
+if h5file.endswith(".h5"):
     prefix = h5file[:-3]
 else:
-    prefix=h5file # not sure what else to do here... 
-    
+    prefix = h5file  # not sure what else to do here...
+
 qual_min = args.qual_min
 vel = args.velocity
 rate = True
 
 if not args.csv and not args.wpt:
-    print('no output requested... quitting')
+    print("no output requested... quitting")
     sys.exit(0)
 
-if not os.path.isdir('rating'):
-    print ("Rating directory not found, all picks will be rated -9")
+if not os.path.isdir("rating"):
+    print("Rating directory not found, all picks will be rated -9")
     rate = False
 
 if args.offset:
-    print ('Offset for all traces set to {} m, offsets folder will be ignored'.format(args.offset))
+    print(
+        "Offset for all traces set to {} m, offsets folder will be ignored".format(
+            args.offset
+        )
+    )
 else:
-    if not os.path.isdir('offsets'):
-        print ("Offsets directory not found and offset keyword not set... quitting")
+    if not os.path.isdir("offsets"):
+        print("Offsets directory not found and offset keyword not set... quitting")
         sys.exit(1)
-        
+
 
 # Identify the picking files
-prefix_test = lambda fnm: True if fnm[:len(prefix)] == prefix else False
-if sys.version_info[0]  == 2:   #filters and map work differently in py2 vs py3
-    picking_files = filter(prefix_test, os.listdir('picking'))
+prefix_test = lambda fnm: True if fnm[: len(prefix)] == prefix else False
+if sys.version_info[0] == 2:  # filters and map work differently in py2 vs py3
+    picking_files = filter(prefix_test, os.listdir("picking"))
     if rate:
-        rating_files = filter(prefix_test, os.listdir('rating'))
+        rating_files = filter(prefix_test, os.listdir("rating"))
         rating_files.sort()
-else: 
-    picking_files = list(filter(prefix_test, os.listdir('picking')))
+else:
+    picking_files = list(filter(prefix_test, os.listdir("picking")))
     if rate:
-        rating_files = list(filter(prefix_test, os.listdir('rating')))
+        rating_files = list(filter(prefix_test, os.listdir("rating")))
         rating_files.sort()
 if not args.offset:
-    offsets_file = 'offsets/{0}'.format(prefix + '_offsets.txt')
-    print ("Using offsets: {}".format(offsets_file))
+    offsets_file = "offsets/{0}".format(prefix + "_offsets.txt")
+    print("Using offsets: {}".format(offsets_file))
 
 # Retain the intersection
-pull_number = lambda fnm: fnm.rsplit('_', 1)[1].split('.')[0][4:]
-if sys.version_info[0]  == 2:   #filters and map work differently in py2 vs py3
+pull_number = lambda fnm: fnm.rsplit("_", 1)[1].split(".")[0][4:]
+if sys.version_info[0] == 2:  # filters and map work differently in py2 vs py3
     picking_lines = map(pull_number, picking_files)
     if rate:
         rating_lines = map(pull_number, rating_files)
         common_lines = list(set(picking_lines).intersection(rating_lines))
-    else: 
+    else:
         common_lines = picking_lines
 else:
     picking_lines = list(map(pull_number, picking_files))
     if rate:
         rating_lines = list(map(pull_number, rating_files))
         common_lines = list(set(picking_lines).intersection(rating_lines))
-        #TODO: if there are some lines rated and some not, this means only rated lines
-        #will be processed.  Can change this behaviour if you want... 
-    else: 
+        # TODO: if there are some lines rated and some not, this means only rated lines
+        # will be processed.  Can change this behaviour if you want...
+    else:
         common_lines = picking_lines
 
 try:
     # For each pair of corresponding files, grab the data
     S = Survey(h5file)
-    
+
     df = pd.DataFrame()  # Empty dataframe to append to
-    print('reading from')
+    print("reading from")
     for line in common_lines:
-        
-        #GET PICKING DATAFRAME
+
+        # GET PICKING DATAFRAME
         pickfile = picking_files[picking_lines.index(line)]
-        print ('\t' + pickfile)
-        with open('picking/' + pickfile) as f:
-            P = pd.read_csv(f,dtype={'FID': str})
-            
-        #GET RATING DATAFRAME
+        print("\t" + pickfile)
+        with open("picking/" + pickfile) as f:
+            P = pd.read_csv(f, dtype={"FID": str})
+
+        # GET RATING DATAFRAME
         if rate:
             ratefile = rating_files[rating_lines.index(line)]
-            with open('rating/' + ratefile) as f:
-                R = pd.read_csv(f,dtype=object,sep='\t', header=None)
-                R.columns = ['FID','rating']
+            with open("rating/" + ratefile) as f:
+                R = pd.read_csv(f, dtype=object, sep="\t", header=None)
+                R.columns = ["FID", "rating"]
                 R.rating = R.rating.astype(int)
-        else: # need R but with rating -9
-            R = pd.DataFrame({'FID':P.FID, 'rating':-9})
-        
-        #GET OFFSET DATAFRAME
+        else:  # need R but with rating -9
+            R = pd.DataFrame({"FID": P.FID, "rating": -9})
+
+        # GET OFFSET DATAFRAME
         if args.offset:
-            O = pd.DataFrame({'FID':P.FID, 'offset':args.offset})
-            O['offset'] = O['offset'].astype(float)
-        else: 
+            O = pd.DataFrame({"FID": P.FID, "offset": args.offset})
+            O["offset"] = O["offset"].astype(float)
+        else:
             # Get the antenna offsets and add to alldata dict
             with open(offsets_file) as f:
-                O = pd.read_csv(f,dtype=object,sep='\t')
-                O.columns = ['FID','offset']
+                O = pd.read_csv(f, dtype=object, sep="\t")
+                O.columns = ["FID", "offset"]
                 O.offset = O.offset.astype(float)
-        
-        #GET RADAR LINE DATAFRAME
+
+        # GET RADAR LINE DATAFRAME
         L = S.ExtractLine(line)
         sample_rate = L.rate
-        L = pd.DataFrame({
-            'FID' : L.metadata.fids,
-            'lon' : L.metadata.lons,
-            'lat' : L.metadata.lats,
-            'elev' : L.metadata.alt_asl}, columns= ["FID","lon","lat","elev"])
-        
-        
-        #MERGE THESE TOGETHER INTO ONE DATAFRAME: 
-        #only the picks that have ratings (and ratings that have picks) will go forward 
-        PR = pd.merge(P,R, on="FID", how='inner') 
-        #only picks with offsets will go forward         
-        PRO = pd.merge(PR,O, on="FID", how='inner')
-        #only picks with rating, with offset with data will go forward          
-        PROL = pd.merge(PRO,L, on="FID", how='inner')      
-        
-        print("\t Line {} has {} traces, {} are in the pick file, {} are rated. \n\t\t {} traces have both picks and are rated but {} have invalid picks\n".format(
-            line, L.shape[0], P.shape[0], len(R['rating'] != -9), 
-            PROL.shape[0], P.trav_time.isnull().sum()))
-        
+        L = pd.DataFrame(
+            {
+                "FID": L.metadata.fids,
+                "lon": L.metadata.lons,
+                "lat": L.metadata.lats,
+                "elev": L.metadata.alt_asl,
+            },
+            columns=["FID", "lon", "lat", "elev"],
+        )
+
+        # MERGE THESE TOGETHER INTO ONE DATAFRAME:
+        # only the picks that have ratings (and ratings that have picks) will go forward
+        PR = pd.merge(P, R, on="FID", how="inner")
+        # only picks with offsets will go forward
+        PRO = pd.merge(PR, O, on="FID", how="inner")
+        # only picks with rating, with offset with data will go forward
+        PROL = pd.merge(PRO, L, on="FID", how="inner")
+
+        print(
+            "\t Line {} has {} traces, {} are in the pick file, {} are rated. \n\t\t {} traces have both picks and are rated but {} have invalid picks\n".format(
+                line,
+                L.shape[0],
+                P.shape[0],
+                len(R["rating"] != -9),
+                PROL.shape[0],
+                P.trav_time.isnull().sum(),
+            )
+        )
+
         if args.removeNA:
             PROL = PROL.dropna(subset=["trav_time"])
         if PROL.shape[0] == 0:
             continue
-        
-        t = PROL.trav_time*sample_rate
+
+        t = PROL.trav_time * sample_rate
         t += zero_time_correction(PROL.offset)
-        PROL['thick'] = time2depth(t, PROL.offset, vel) # thickness
-        PROL['err'] = (1.0/PROL.rating**2 * 50.0)  # assumes rated
-        PROL.loc[(PROL.rating == -9),'err'] = float('nan')  # for unrated
-        PROL['line'] = line
-        PROL['bed_elev'] = PROL.elev-PROL.thick
+        PROL["thick"] = time2depth(t, PROL.offset, vel)  # thickness
+        PROL["err"] = 1.0 / PROL.rating**2 * 50.0  # assumes rated
+        PROL.loc[(PROL.rating == -9), "err"] = float("nan")  # for unrated
+        PROL["line"] = line
+        PROL["bed_elev"] = PROL.elev - PROL.thick
         df = pd.concat([df, PROL])
 
     # Now should have a dataframe with all lines
     path_out = "result/"
     if not os.path.exists(path_out):
         os.makedirs(path_out)
-    
-    fout = path_out + prefix + '_result.csv'
-    
-    #filter on rating
-    df = df[(df['rating'] >= qual_min)]
-    df = df[['FID','line','lon','lat','elev','thick','bed_elev','err']]    
-    df = df.sort_values('FID')
 
-       
+    fout = path_out + prefix + "_result.csv"
+
+    # filter on rating
+    df = df[(df["rating"] >= qual_min)]
+    df = df[["FID", "line", "lon", "lat", "elev", "thick", "bed_elev", "err"]]
+    df = df.sort_values("FID")
+
     if args.csv:
-        df.to_csv(fout, index=False, na_rep='nan')
-        print ('writing to ' + fout)
-        
+        df.to_csv(fout, index=False, na_rep="nan")
+        print("writing to " + fout)
+
     if args.wpt:
         # Create a shapefile for the df
         df = df[(df.lon != "None")]
         df = df[(df.lat != "None")]
         df = df[(df.elev != "None")]
-        proj='EPSG:4326'  #Assuming WGS84
-        #Creating a points while zipping 3 coordinates(3 dimension)
-        if df.shape[0]==0: 
-            print('No valid location data found - cannot generate shapefile(s)')
+        proj = "EPSG:4326"  # Assuming WGS84
+        # Creating a points while zipping 3 coordinates(3 dimension)
+        if df.shape[0] == 0:
+            print("No valid location data found - cannot generate shapefile(s)")
             sys.exit(1)
-        pts_gd=gpd.GeoDataFrame(df,geometry=gpd.points_from_xy(
-                df.lon.astype(float), df.lat.astype(float),z=df.elev, crs=proj))
-        print ('writing to ' + fout[:-4]+"_wpt.shp")                    
-        pts_gd.to_file(fout[:-4]+"_wpt.shp")
-                        
-    
-    
+        pts_gd = gpd.GeoDataFrame(
+            df,
+            geometry=gpd.points_from_xy(
+                df.lon.astype(float), df.lat.astype(float), z=df.elev, crs=proj
+            ),
+        )
+        print("writing to " + fout[:-4] + "_wpt.shp")
+        pts_gd.to_file(fout[:-4] + "_wpt.shp")
+
+
 except:
     traceback.print_exc()

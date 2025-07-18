@@ -1,26 +1,28 @@
-""" Functions for reading pulseEKKO data files. """
+"""Functions for reading pulseEKKO data files."""
 
 import os
 import numpy as np
 from struct import unpack
 
+
 def parse_header(lines):
-    """ Read a header string and return a dictionary.
+    """Read a header string and return a dictionary.
 
     str -> dict
     """
     meta = {}
     for line in lines:
         if "=" in line:
-            k,v = line.split("=", 1)
+            k, v = line.split("=", 1)
             meta[k.strip()] = v.strip()
         elif (("-" in line) or ("/" in line)) and len(line.strip()) == 8:
             meta["date"] = line.strip()
 
     return meta
 
+
 def parse_data(s):
-    """ Read a data string and return a dictionary and a data array.
+    """Read a data string and return a dictionary and a data array.
 
     str -> (dict, array)
     """
@@ -29,24 +31,28 @@ def parse_data(s):
     meta = {}
 
     while True:
-        if len(s) < i+128:
+        if len(s) < i + 128:
             break
-        hdr = unpack("32f", s[i:i+128])
+        hdr = unpack("32f", s[i : i + 128])
         nsmp = int(hdr[2])
-        d = unpack("{0}h".format(nsmp), s[i+128:i+128+2*nsmp])
+        d = unpack("{0}h".format(nsmp), s[i + 128 : i + 128 + 2 * nsmp])
         meta[i] = hdr
         dlist.append(d)
-        i += (128 + 2*nsmp)
+        i += 128 + 2 * nsmp
 
     # Pad short traces with zeros
     maxlen = max([len(a) for a in dlist])
-    dlist_even = map(lambda a,n: a if len(a) == n else a+(n-len(a))*[0],
-                     dlist, (maxlen for _ in dlist))
+    dlist_even = map(
+        lambda a, n: a if len(a) == n else a + (n - len(a)) * [0],
+        dlist,
+        (maxlen for _ in dlist),
+    )
     darray = np.vstack(dlist_even).T
     return meta, darray
 
+
 def read_pulseEKKO(path):
-    """ Search for header and data files matching path, open them, and return a
+    """Search for header and data files matching path, open them, and return a
     dictionary of line metadata, a dictionary of trace metadata, and an array
     of radar data.
 
@@ -65,4 +71,3 @@ def read_pulseEKKO(path):
         trmeta, darray = parse_data(f.read())
 
     return lnmeta, trmeta, darray
-

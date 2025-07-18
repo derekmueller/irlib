@@ -10,6 +10,7 @@ import irlib
 from scipy.io import savemat
 import traceback
 
+
 def print_syntax():
     s = """
     SYNTAX: h52mat SURVEYFILE OUTFILE [options]
@@ -28,40 +29,41 @@ def print_syntax():
     print(s)
     return
 
-optlist, fins = getopt.gnu_getopt(sys.argv[1:], 'd:gsbroq')
+
+optlist, fins = getopt.gnu_getopt(sys.argv[1:], "d:gsbroq")
 optdict = dict(optlist)
 
-if '-d' in optdict.keys():
-    cache_dir = optdict['-d']
+if "-d" in optdict.keys():
+    cache_dir = optdict["-d"]
 else:
     cache_dir = "cache"
 
-if '-g' in optdict.keys():
+if "-g" in optdict.keys():
     fix_gps = True
 else:
     fix_gps = False
 
-if '-s' in optdict.keys():
+if "-s" in optdict.keys():
     smoothen_gps = True
 else:
     smoothen_gps = False
 
-if '-r' in optdict.keys():
+if "-r" in optdict.keys():
     remove_stationary = True
 else:
     remove_stationary = False
 
-if '-b' in optdict.keys():
+if "-b" in optdict.keys():
     remove_blanks = True
 else:
     remove_blanks = False
 
-if '-o' in optdict.keys():
+if "-o" in optdict.keys():
     overwrite = True
 else:
     overwrite = False
 
-if '-q' in optdict.keys():
+if "-q" in optdict.keys():
     be_quiet = True
 else:
     be_quiet = False
@@ -81,7 +83,7 @@ line_dict = {}
 metadata_dict = {}
 
 for line in lines:
-    line_no = line.split('_')[1]
+    line_no = line.split("_")[1]
     if os.path.isfile(outfnm) and not overwrite:
         pass
     else:
@@ -105,7 +107,6 @@ for line in lines:
             sys.exit(0)
 
 try:
-    savemat(outfnm, line_dict, oned_as='row')
+    savemat(outfnm, line_dict, oned_as="row")
 except:
     traceback.print_exc()
-

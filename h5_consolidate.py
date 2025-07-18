@@ -12,9 +12,9 @@ prog_description = """
     Combines multiple datasets (>1) into a single concatenated dataset.
     """
 
-parser = argparse.ArgumentParser(description = prog_description)
-parser.add_argument('infile', action = 'append', nargs = '*')
-parser.add_argument('-o', '--outfile')
+parser = argparse.ArgumentParser(description=prog_description)
+parser.add_argument("infile", action="append", nargs="*")
+parser.add_argument("-o", "--outfile")
 
 args = parser.parse_args()
 
@@ -22,21 +22,21 @@ args = parser.parse_args()
 fout = args.outfile
 fins = args.infile[0]
 
-h5out = h5py.File(fout, 'w')
+h5out = h5py.File(fout, "w")
 
 
 # Read each input HDF in the order provided, and copy each line to h5out
 i = 0
 for fin in fins:
     print("Copying " + fin)
-    h5in = h5py.File(fin, 'r')
+    h5in = h5py.File(fin, "r")
     # Get each line in the input HDF
     groups = [item[0] for item in h5in.items()]
-    if 'LabVIEW Boolean' in groups:
-        groups.pop(groups.index('LabVIEW Boolean'))
-    groups.sort(key=lambda s: int(s.split('_')[1]))
+    if "LabVIEW Boolean" in groups:
+        groups.pop(groups.index("LabVIEW Boolean"))
+    groups.sort(key=lambda s: int(s.split("_")[1]))
     for group in groups:
-        destgroup = 'line_'+str(i)
+        destgroup = "line_" + str(i)
         print("\t{0} named {1}".format(group, destgroup))
         h5in.copy(h5in[group], h5out, name=destgroup)
         i += 1

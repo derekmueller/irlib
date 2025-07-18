@@ -50,41 +50,43 @@ import math
 import numpy as np
 import pdb, traceback
 
+
 def csinci():
-    """ Complex valued sinc function interpolation.
+    """Complex valued sinc function interpolation.
 
     trout = csinci(trin, t, tout, sizetable)
     """
 
-def fktran(D, t, x, ntpad=None, nxpad=None, percent=0., ishift=1):
-    """ F-K transform using fft on time domain and ifft on space domain. """
+
+def fktran(D, t, x, ntpad=None, nxpad=None, percent=0.0, ishift=1):
+    """F-K transform using fft on time domain and ifft on space domain."""
     nsamp = D.shape[0]
     ntr = D.shape[1]
 
     if len(t) != nsamp:
-        raise Exception('Time domain length is inconsistent in input')
+        raise Exception("Time domain length is inconsistent in input")
     if len(x) != ntr:
-        raise Exception('Space domain length is inconsistent in input')
+        raise Exception("Space domain length is inconsistent in input")
 
     if ntpad is None:
-        ntpad = 2.0**nextpow2(t)
+        ntpad = 2.0 ** nextpow2(t)
     if nxpad is None:
-        nxpad = 2.0**nextpow2(x)
+        nxpad = 2.0 ** nextpow2(x)
 
     # Get real values of transform with fftrl
     specfx, f = fftrl(D, t, percent, ntpad)
 
     # Taper and pad in space domain
-    if percent > 0.:
+    if percent > 0.0:
         mw = np.tile(mwindow(ntr, percent), (ntr, 1))
         specfx = specfx * mw
     if ntr < nxpad:
-        ntr = nxpad                     # this causes ifft to apply the x padding
+        ntr = nxpad  # this causes ifft to apply the x padding
 
     spec = np.fft.ifft(specfx.T, n=ntr, axis=0).T
     # Compute kx
-    kxnyq = 1. / (2. * (x[1] - x[0]))
-    dkx = 2. * kxnyq / ntr
+    kxnyq = 1.0 / (2.0 * (x[1] - x[0]))
+    dkx = 2.0 * kxnyq / ntr
     kx = np.hstack([np.arange(0, kxnyq, dkx), np.arange(-kxnyq, 0, dkx)])
 
     if ishift:
@@ -96,12 +98,12 @@ def fktran(D, t, x, ntpad=None, nxpad=None, percent=0., ishift=1):
 
 
 def fftrl(s, t, percent=0.0, n=None):
-    """ Returns the real part of the forward Fourier transform. """
+    """Returns the real part of the forward Fourier transform."""
     # Determine the number of traces in ensemble
     l = s.shape[0]
     m = s.shape[1]
     ntraces = 1
-    itr = 0                             # transpose flag
+    itr = 0  # transpose flag
     if l == 1:
         nsamps = m
         itr = 1
@@ -122,56 +124,57 @@ def fftrl(s, t, percent=0.0, n=None):
         s = s * mw
     # Pad s if needed
     if nsamps < n:
-        s = np.vstack([s, np.zeros([n-nsamps, ntraces])])
+        s = np.vstack([s, np.zeros([n - nsamps, ntraces])])
         nsamps = n
 
     # Do the transformation
     spec = np.fft.fft(s, n=nsamps, axis=0)
-    spec = spec[:int(n/2)+1, :]              # save only positive frequencies
+    spec = spec[: int(n / 2) + 1, :]  # save only positive frequencies
 
     # Build the frequency vector
-    fnyq = 1. / (2 * (t[1] - t[0]))
+    fnyq = 1.0 / (2 * (t[1] - t[0]))
     nf = spec.shape[0]
     df = 2.0 * fnyq / n
-    f = df * np.arange(0,nf).T
+    f = df * np.arange(0, nf).T
     if itr:
         f = f.T
         spec = spec.T
     return spec, f
 
-def ifktran(spec, f, kx, nfpad=None, nkpad=None, percent=0.0):
-    """ Inverse f-k transform.
-        Arguments:
-            spec    complex valued f-k series
-            f       frequency components for rows of spec
-            kx      wavenumber components for columns of spec
-            nfpad   size to pad spec rows to
-            nkpad   size to pad spec columns to
-            percent controls cosine taper
 
-        Returns:
-            D       2-d array; one trace per column
-            t       time coordinates for D
-            x       space coordinates for D
+def ifktran(spec, f, kx, nfpad=None, nkpad=None, percent=0.0):
+    """Inverse f-k transform.
+    Arguments:
+        spec    complex valued f-k series
+        f       frequency components for rows of spec
+        kx      wavenumber components for columns of spec
+        nfpad   size to pad spec rows to
+        nkpad   size to pad spec columns to
+        percent controls cosine taper
+
+    Returns:
+        D       2-d array; one trace per column
+        t       time coordinates for D
+        x       space coordinates for D
     """
-    nf,nkx = spec.shape
+    nf, nkx = spec.shape
 
     if len(f) != nf:
-        raise Exception('frequency coordinate vector is wrong size')
+        raise Exception("frequency coordinate vector is wrong size")
     elif len(kx) != nkx:
-        raise Exception('wavenumber coordinate vector is wrong size')
+        raise Exception("wavenumber coordinate vector is wrong size")
 
     if nfpad is None:
-        nfpad = 2.0**nextpow2(len(f))
+        nfpad = 2.0 ** nextpow2(len(f))
     if nkpad is None:
-        nkpad = 2.0**nextpow2(len(kx))
+        nkpad = 2.0 ** nextpow2(len(kx))
 
     # Determine if kx needs to be wrapped
     if kx[0] < 0.0:
         # Looks unwrapped (is this wise?)
         ind = kx >= 0.0
         kx = np.hstack([kx[ind], kx[np.arange(ind[0])]])
-        spec = np.hstack([spec[:,ind], spec[:,np.arange(ind[0])]])
+        spec = np.hstack([spec[:, ind], spec[:, np.arange(ind[0])]])
     else:
         ind = False
 
@@ -196,16 +199,17 @@ def ifktran(spec, f, kx, nfpad=None, nkpad=None, percent=0.0):
     x = np.arange(0, xmax, dx)
     return D, t, x
 
+
 def ifftrl(spec, f):
-    """ Inverse Fourier transform for real-valued series.
-        Arguments:
-            spec    input spectrum
-            f       input frequency coordinates
-        Returns:
-            r       output trace
-            t       output time vector
+    """Inverse Fourier transform for real-valued series.
+    Arguments:
+        spec    input spectrum
+        f       input frequency coordinates
+    Returns:
+        r       output trace
+        t       output time vector
     """
-    m,n = spec.shape            # Will be a problem if spec is 1-dimensional
+    m, n = spec.shape  # Will be a problem if spec is 1-dimensional
     itr = 0
     if (m == 1) or (n == 1):
         if m == 1:
@@ -227,45 +231,49 @@ def ifftrl(spec, f):
         L2 = L1[-2:0:-1]
     else:
         L1 = np.arange(nsamp)
-        L2 = L1[-2:0:-1]            # WTF? -njw
-    symspec = np.vstack([spec[L1,:], np.conj(spec[L2,:])])
+        L2 = L1[-2:0:-1]  # WTF? -njw
+    symspec = np.vstack([spec[L1, :], np.conj(spec[L2, :])])
     # Transform the array
     r = (np.fft.ifft(symspec.T)).real.T
     # Build the time vector
     n = len(r)
     df = f[1] - f[0]
-    dt = 1.0 / (n*df)
+    dt = 1.0 / (n * df)
     t = dt * np.arange(n).T
     if itr == 1:
         r = r.T
         t = t.T
     return r, t
 
-def mwindow(n, percent=10.):
-    """ Creates a boxcar window with raised-cosine tapers. """
-    if type(n) is not int and type(n) is not float:
-        n = len(n)
-    # Compute the hanning function
-    if percent > 50. or percent < 0.:
-        raise Exception('Invalid percent in function mwindow (={0})'.format(percent))
-    m = 2.0 * math.floor(percent * n / 100.)
-    h = np.hanning(m)
-    return np.hstack([h[:m/2], np.ones([n-m]), h[m/2:]])
 
-def mwhalf(n, percent=10.):
-    """ Half mwindow. """
+def mwindow(n, percent=10.0):
+    """Creates a boxcar window with raised-cosine tapers."""
     if type(n) is not int and type(n) is not float:
         n = len(n)
     # Compute the hanning function
-    if percent > 100. or percent < 0.:
-        raise Exception('Invalid percent in function mwhalf (={0})'.format(percent))
-    m = int(math.floor(percent * n / 100.))
-    h = np.hanning(2*m)
-    return np.hstack([np.ones([n-m]), h[m:0:-1]])
+    if percent > 50.0 or percent < 0.0:
+        raise Exception("Invalid percent in function mwindow (={0})".format(percent))
+    m = 2.0 * math.floor(percent * n / 100.0)
+    h = np.hanning(m)
+    return np.hstack([h[: m / 2], np.ones([n - m]), h[m / 2 :]])
+
+
+def mwhalf(n, percent=10.0):
+    """Half mwindow."""
+    if type(n) is not int and type(n) is not float:
+        n = len(n)
+    # Compute the hanning function
+    if percent > 100.0 or percent < 0.0:
+        raise Exception("Invalid percent in function mwhalf (={0})".format(percent))
+    m = int(math.floor(percent * n / 100.0))
+    h = np.hanning(2 * m)
+    return np.hstack([np.ones([n - m]), h[m:0:-1]])
+
 
 def nextpow2(a):
-    """ Gives the next power of 2 larger than a. """
+    """Gives the next power of 2 larger than a."""
     return np.ceil(np.log(a) / np.log(2)).astype(int)
+
 
 def fkmig(D, dt, dx, v, params=None):
 
@@ -275,10 +283,10 @@ def fkmig(D, dt, dx, v, params=None):
     x = np.arange(0, ntr) * dx
     interpolated = True
 
-    fnyq = 1.0 / (2.0*dt)
-    knyq = 1.0 / (2.0*dx)
+    fnyq = 1.0 / (2.0 * dt)
+    knyq = 1.0 / (2.0 * dx)
     tmax = t[-1]
-    xmax = abs(x[-1]-x[0])
+    xmax = abs(x[-1] - x[0])
 
     # Deal with parameters
     if params == None:
@@ -286,30 +294,30 @@ def fkmig(D, dt, dx, v, params=None):
         fwid = 0.2 * (fnyq - fmax)
         dipmax = 85.0
         dipwid = 90.0 - dipmax
-        tpad = min([0.5 * tmax, abs(tmax / math.cos(math.pi*dipmax / 180.0))])
-        xpad = min([0.5 * xmax, xmax / math.sin(math.pi*dipmax / 180.0)])
+        tpad = min([0.5 * tmax, abs(tmax / math.cos(math.pi * dipmax / 180.0))])
+        xpad = min([0.5 * xmax, xmax / math.sin(math.pi * dipmax / 180.0)])
         padflag = 1
         intflag = 3
         cosflag = 1
         lsinc = 1
         ntable = 25
-        mcflag = 0      # Faster, less memory-efficient transform (not implemented)
+        mcflag = 0  # Faster, less memory-efficient transform (not implemented)
         kpflag = 50.0
 
     # Apply padding
     # tpad
-    nsampnew = int(2.0**nextpow2( round((tmax+tpad) / dt + 1.0) ))
-    tmaxnew = (nsampnew-1)*dt
-    tnew = np.arange(t[0], tmaxnew+dt, dt)
-    ntpad = nsampnew-nsamp
-    D = np.vstack([D,np.zeros([ntpad,ntr])])
+    nsampnew = int(2.0 ** nextpow2(round((tmax + tpad) / dt + 1.0)))
+    tmaxnew = (nsampnew - 1) * dt
+    tnew = np.arange(t[0], tmaxnew + dt, dt)
+    ntpad = nsampnew - nsamp
+    D = np.vstack([D, np.zeros([ntpad, ntr])])
 
     # xpad
-    ntrnew = 2 ** nextpow2(round((xmax+xpad) / dx + 1))
-    xmaxnew = (ntrnew-1)*dx + x[0]
-    xnew = np.arange(x[0], xmaxnew+dx, dx)
-    nxpad = ntrnew-ntr
-    D = np.hstack([D, np.zeros([nsampnew,nxpad])])
+    ntrnew = 2 ** nextpow2(round((xmax + xpad) / dx + 1))
+    xmaxnew = (ntrnew - 1) * dx + x[0]
+    xnew = np.arange(x[0], xmaxnew + dx, dx)
+    nxpad = ntrnew - ntr
+    D = np.hstack([D, np.zeros([nsampnew, nxpad])])
 
     # Forward f-k transform
     fkspec, f, kx = fktran(D, tnew, xnew, nsampnew, ntrnew, 0, 0)
@@ -317,23 +325,23 @@ def fkmig(D, dt, dx, v, params=None):
     nf = len(f)
 
     # Compute frequency mask
-    ifmaxmig = int(round((fmax+fwid) / df + 1.0))
-    pct = 100.0 * (fwid / (fmax+fwid))
-    fmask = np.hstack([mwhalf(ifmaxmig,pct), np.zeros([nf-ifmaxmig])])
-    fmaxmig = (ifmaxmig-1)*df       # i.e. fmax+fwid to nearest sample
+    ifmaxmig = int(round((fmax + fwid) / df + 1.0))
+    pct = 100.0 * (fwid / (fmax + fwid))
+    fmask = np.hstack([mwhalf(ifmaxmig, pct), np.zeros([nf - ifmaxmig])])
+    fmaxmig = (ifmaxmig - 1) * df  # i.e. fmax+fwid to nearest sample
 
     # Now loop over wavenumbers
-    ve = v / 2.0                    # exploding reflector velocity
+    ve = v / 2.0  # exploding reflector velocity
     dkz = df / ve
-    kz = (np.arange(0,len(f)) * dkz).T
-    kz2 = kz ** 2
+    kz = (np.arange(0, len(f)) * dkz).T
+    kz2 = kz**2
 
     th1 = dipmax * math.pi / 180.0
-    th2 = (dipmax+dipwid) * math.pi / 180.0
+    th2 = (dipmax + dipwid) * math.pi / 180.0
     if th1 == th2:
         print("No dip filtering")
 
-    for j,kxi in enumerate(kx):
+    for j, kxi in enumerate(kx):
         # Evanescent cut-off
         fmin = abs(kxi) * ve
         ifmin = int(math.ceil(fmin / df)) + 1
@@ -341,13 +349,13 @@ def fkmig(D, dt, dx, v, params=None):
         # Compute dip mask
         if th1 != th2:
             # First physical frequency excluding dc
-            ifbeg = max([ifmin, 1])+1
+            ifbeg = max([ifmin, 1]) + 1
             # Frequencies to migrate
-            ifuse = np.arange(ifbeg, ifmaxmig+1)
+            ifuse = np.arange(ifbeg, ifmaxmig + 1)
             if len(ifuse) == 1:
                 # Special case
                 dipmask = np.zeros(f.shape)
-                dipmask[ifuse-1] = 1
+                dipmask[ifuse - 1] = 1
             else:
                 # Physical dips for each frequency
                 theta = np.arcsin(fmin / f[ifuse])
@@ -360,10 +368,12 @@ def fkmig(D, dt, dx, v, params=None):
                 # Initialize mask to zeros
                 dipmask = np.zeros(f.shape)
                 # Pass these dips
-                dipmask[if1:nf-1] = 1
+                dipmask[if1 : nf - 1] = 1
                 dipmask[if2:if1] = 0.5 + 0.5 * np.cos(
-                        (theta[np.arange(if2, if1, -1) - ifbeg] - th1)
-                        * math.pi / float(th2-th1))
+                    (theta[np.arange(if2, if1, -1) - ifbeg] - th1)
+                    * math.pi
+                    / float(th2 - th1)
+                )
         else:
             dipmask = np.ones(f.shape)
 
@@ -371,7 +381,7 @@ def fkmig(D, dt, dx, v, params=None):
         tmp = fkspec[:, j] * fmask * dipmask
 
         # Compute f that map to kz
-        fmap = ve * np.sqrt(kx[j]**2 + kz2)
+        fmap = ve * np.sqrt(kx[j] ** 2 + kz2)
         # Contains one value for each kz giving the frequency
         # that maps there to migrate the data
         # Many of these frequencies will be far too high
@@ -380,14 +390,14 @@ def fkmig(D, dt, dx, v, params=None):
         # and end at the highest f to be migrated
 
         # Now map samples by interpolation
-        fkspec[:, j] *= 0.0             # initialize output spectrum to zero
+        fkspec[:, j] *= 0.0  # initialize output spectrum to zero
         if len(ind) != 0:
             # Compute cosine scale factor
             if cosflag:
                 if fmap[ind].all() == 0:
                     scl = np.ones(ind.shape[0])
                     li = ind.shape[0]
-                    scl[1:li] = (ve * kz[ind[1:li]] / fmap[ind[1:li]])[:,0]
+                    scl[1:li] = (ve * kz[ind[1:li]] / fmap[ind[1:li]])[:, 0]
                 else:
                     scl = ve * kz[ind] / fmap[ind]
             else:
@@ -395,23 +405,21 @@ def fkmig(D, dt, dx, v, params=None):
             if intflag == 0:
                 # Nearest neighbour interpolation
                 ifmap = (fmap[ind] / df).astype(int)
-                fkspec[ind, j] = (scl.squeeze() \
-                    * tmp[ifmap.squeeze()]).reshape([-1,1])
+                fkspec[ind, j] = (scl.squeeze() * tmp[ifmap.squeeze()]).reshape([-1, 1])
             elif intflag == 1:
                 # Complex sinc interpolation
-                fkspec[ind, j] = scl \
-                        * csinci(tmp, f, fmap[ind], np.hstack([lsinc,ntable]))
+                fkspec[ind, j] = scl * csinci(
+                    tmp, f, fmap[ind], np.hstack([lsinc, ntable])
+                )
             elif intflag == 2:
                 # Spline interpolation
                 # Not implemented
                 pass
             elif intflag == 3:
                 # Linear interpolation
-                r_interp = scl.squeeze() \
-                    * np.interp(fmap[ind], f, tmp.real).squeeze()
-                j_interp = scl.squeeze() \
-                    * np.interp(fmap[ind], f, tmp.imag).squeeze()
-                fkspec[ind, j] = (r_interp + j_interp * 1j).reshape([-1,1])
+                r_interp = scl.squeeze() * np.interp(fmap[ind], f, tmp.real).squeeze()
+                j_interp = scl.squeeze() * np.interp(fmap[ind], f, tmp.imag).squeeze()
+                fkspec[ind, j] = (r_interp + j_interp * 1j).reshape([-1, 1])
 
     # Inverse transform
     Dmig, tmig, xmig = ifktran(fkspec, f, kx)

@@ -1,13 +1,12 @@
-
 from __future__ import print_function
 import matplotlib.pyplot
 from . import commands
 from . import command_parser as cp
 from .components import Radargram, PickWindow
 
+
 class PickCall(commands.Command):
-    """ This is a "General" type command that dispatches to "Pick" type commands.
-    """
+    """This is a "General" type command that dispatches to "Pick" type commands."""
 
     cmd = "pick"
     helpstr = """Manage event picking
@@ -17,6 +16,7 @@ class PickCall(commands.Command):
     Commands related to radar event picking are accessed by first typing "pick",
     and then the specific command. Type 'help' for a list of possibilities.
     """
+
     def apply(self, app, args):
         if len(args) == 0:
             print("Type 'help' or 'help pick' for instructions.")
@@ -26,10 +26,12 @@ class PickCall(commands.Command):
             print("No picking command '{0}' exists".format(args[0]))
         return
 
+
 class PickCommandBase(commands.Command):
     _type = "Pick"
     cmd = None
     helpstr = ""
+
 
 class PickOn(PickCommandBase):
 
@@ -37,13 +39,16 @@ class PickOn(PickCommandBase):
     helpstr = "\tOpen a PickWindow.\n"
 
     def apply(self, app, args):
-        if app.line.data.size == 0:  #sometimes data are missing from the entire line
-            print("\n\n --- Warning:  No data exists in this line, please try loading another line with the open command ---  \n")
+        if app.line.data.size == 0:  # sometimes data are missing from the entire line
+            print(
+                "\n\n --- Warning:  No data exists in this line, please try loading another line with the open command ---  \n"
+            )
             return
         w = PickWindow(app.line)
         w.connect_radargram(app.get_appwindows(Radargram)[0])
         app.appwindows.append(w)
         return
+
 
 class PickOff(PickCommandBase):
 
@@ -56,6 +61,7 @@ class PickOff(PickCommandBase):
             app.remove_appwindow(w)
             del w
 
+
 class PickSave(PickCommandBase):
 
     cmd = "save"
@@ -65,6 +71,7 @@ class PickSave(PickCommandBase):
         for w in app.get_appwindows(PickWindow):
             w.save_picks()
 
+
 class PickLoad(PickCommandBase):
 
     cmd = "load"
@@ -73,6 +80,7 @@ class PickLoad(PickCommandBase):
     def apply(self, app, args):
         for w in app.get_appwindows(PickWindow):
             w.load_picks()
+
 
 class PickBedAuto(PickCommandBase):
 
@@ -84,6 +92,7 @@ class PickBedAuto(PickCommandBase):
     Optionally, constrain pick to between *s0* and *s1* samples from the "top"
     of the traces.
     """
+
     def apply(self, app, args):
         for w in app.get_appwindows(PickWindow):
             if len(args) > 0:
@@ -95,6 +104,7 @@ class PickBedAuto(PickCommandBase):
             else:
                 pickargs = []
             w.autopick_bed(*pickargs)
+
 
 class PickDCAuto(PickCommandBase):
 
@@ -118,4 +128,3 @@ class PickDCAuto(PickCommandBase):
             else:
                 pickargs = []
             w.autopick_dc(*pickargs)
-

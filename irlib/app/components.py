@@ -1,4 +1,4 @@
-""" Define application components """
+"""Define application components"""
 
 import sys
 import os
@@ -20,8 +20,9 @@ matplotlib.rcParams["keymap.xscale"] = ""
 matplotlib.rcParams["keymap.yscale"] = ""
 matplotlib.rcParams["keymap.quit"] = ""
 
+
 class AppWindow(object):
-    """ This is the generic application window class, and contains an axes
+    """This is the generic application window class, and contains an axes
     instance and event-handling and update machinery.
 
     Subclasses must overload _onclick() and _onkeypress() methods.
@@ -33,21 +34,25 @@ class AppWindow(object):
         winsize : size of the window, in inches
         """
         self.fig = plt.figure(figsize=winsize)
-        self.ax = self.fig.add_subplot(1,1,1)
+        self.ax = self.fig.add_subplot(1, 1, 1)
 
         # Turn off default shortcuts
 
-        key_press_cids = self.fig.canvas.callbacks.callbacks.get('key_press_event', {}).copy()
+        key_press_cids = self.fig.canvas.callbacks.callbacks.get(
+            "key_press_event", {}
+        ).copy()
         for cid in key_press_cids.keys():
             self.fig.canvas.mpl_disconnect(cid)
 
         # Connect event handlers
-        self.cid_click = self.fig.canvas.mpl_connect('button_press_event', self._onclick)
-        self.cid_key = self.fig.canvas.mpl_connect('key_press_event', self._onkeypress)
+        self.cid_click = self.fig.canvas.mpl_connect(
+            "button_press_event", self._onclick
+        )
+        self.cid_key = self.fig.canvas.mpl_connect("key_press_event", self._onkeypress)
         return
 
     def __del__(self):
-        #self.fig.clf()
+        # self.fig.clf()
         self.fig.canvas.mpl_disconnect(self.cid_click)
         self.fig.canvas.mpl_disconnect(self.cid_key)
         plt.close(self.fig)
@@ -61,24 +66,24 @@ class AppWindow(object):
         pass
 
     def _newline(self, line):
-        """ This method must be overloaded to define how the AppWindow reacts
-        when the line changes. """
+        """This method must be overloaded to define how the AppWindow reacts
+        when the line changes."""
         return
 
     def update(self):
-        """ Redraw the axes """
+        """Redraw the axes"""
         self.fig.canvas.draw()
         return
 
 
 class Radargram(AppWindow):
-    """ Shows a radargram, and has methods for displaying annotations and
-    collecting digitized features. """
+    """Shows a radargram, and has methods for displaying annotations and
+    collecting digitized features."""
 
     fid = 0
     active_coords = []
     annotations = {}
-    #features = {}
+    # features = {}
 
     lum_scale = 0.25
     cmap = plt.cm.binary
@@ -93,15 +98,17 @@ class Radargram(AppWindow):
         super(Radargram, self).__init__((10, 4))
         self.digitize_mode = False
         self._newline(L)
-        self.fig.canvas.manager.set_window_title("Radargram") 
+        self.fig.canvas.manager.set_window_title("Radargram")
         self.fig.tight_layout()
         return
 
     def _newline(self, L):
-        """ Replace internal state with a new radar line, discarding all
-        digitizing and feature information and redrawing. """
-        if L.data.size == 0:  #sometimes data are missing from the entire line
-            print("\n\n --- Warning:  No data exists in this line, please try loading another line with the open command ---  \n")
+        """Replace internal state with a new radar line, discarding all
+        digitizing and feature information and redrawing."""
+        if L.data.size == 0:  # sometimes data are missing from the entire line
+            print(
+                "\n\n --- Warning:  No data exists in this line, please try loading another line with the open command ---  \n"
+            )
             L = None
             return
         self.rate = L.metadata.sample_rate[0]
@@ -112,7 +119,7 @@ class Radargram(AppWindow):
         return
 
     def _onclick(self, event):
-        """ Event handler for mouse clicks."""
+        """Event handler for mouse clicks."""
         if self.digitize_mode:
 
             if event.button == 1:
@@ -126,18 +133,19 @@ class Radargram(AppWindow):
                 self.end_feature()
 
         else:
-            
+
             try:
                 x = int(round(event.xdata))
                 y = int(round(event.ydata))
-                
+
                 if event.button == 1:
 
-                    #self.remove_annotation("x-hair")
-                    #self.remove_annotation("x-hair-text")
+                    # self.remove_annotation("x-hair")
+                    # self.remove_annotation("x-hair-text")
                     if "x-hair" in self.annotations:
-                        anns = self.annotations.get("x-hair", []) + \
-                                self.annotations.get("x-hair-text", [])
+                        anns = self.annotations.get(
+                            "x-hair", []
+                        ) + self.annotations.get("x-hair-text", [])
                         for item in anns:
                             item.remove()
 
@@ -148,20 +156,27 @@ class Radargram(AppWindow):
                     lines.extend(self.ax.plot((x, x), yr, ":k"))
                     self.annotations["x-hair"] = lines
 
-
                     s = "{fid}\nsamp {samp}\ntime {time} ns".format(
-                                        fid=self.L.fids[x],
-                                        samp=y,
-                                        time=round(y/self.rate*1e9,2))
-                    
-                    ha = "left" if (x < self.L.data.shape[1]//2) else "right"
-                    va = "top" if (y < self.L.data.shape[0]//2) else "bottom"
+                        fid=self.L.fids[x], samp=y, time=round(y / self.rate * 1e9, 2)
+                    )
+
+                    ha = "left" if (x < self.L.data.shape[1] // 2) else "right"
+                    va = "top" if (y < self.L.data.shape[0] // 2) else "bottom"
                     xoff = 1 if ha == "left" else -1
                     yoff = 10 if va == "top" else -10
-                    txtbbox = dict(facecolor='k', alpha=0.2, pad=3)
+                    txtbbox = dict(facecolor="k", alpha=0.2, pad=3)
 
-                    txt = self.ax.text(x+xoff, y+yoff, s, size=10, color="w",
-                                        weight="bold", ha=ha, va=va, bbox=txtbbox)
+                    txt = self.ax.text(
+                        x + xoff,
+                        y + yoff,
+                        s,
+                        size=10,
+                        color="w",
+                        weight="bold",
+                        ha=ha,
+                        va=va,
+                        bbox=txtbbox,
+                    )
                     self.annotations["x-hair-text"] = [txt]
                     self.fig.canvas.draw()
 
@@ -169,23 +184,25 @@ class Radargram(AppWindow):
                     self.repaint()
 
                 else:
-                    print ("\n\teasting: {0:.1f}\tnorthing: {1:.1f}"
-                            .format(self.L.metadata.eastings[x],
-                                    self.L.metadata.northings[x]))
+                    print(
+                        "\n\teasting: {0:.1f}\tnorthing: {1:.1f}".format(
+                            self.L.metadata.eastings[x], self.L.metadata.northings[x]
+                        )
+                    )
 
             except TypeError:
                 pass
         return
 
     def _onkeypress(self, event):
-        """ Event handler for keystrokes. """
-        if event.key == 'N':
-            self.add_feature('')
+        """Event handler for keystrokes."""
+        if event.key == "N":
+            self.add_feature("")
 
-        elif event.key == 'E':
+        elif event.key == "E":
             self.end_feature()
 
-    #def add_feature(self, s):
+    # def add_feature(self, s):
     #    if self.digitize_mode:
     #        self.end_feature()
     #    else:
@@ -195,7 +212,7 @@ class Radargram(AppWindow):
     #    self.update()
     #    return self.fid
 
-    #def end_feature(self):
+    # def end_feature(self):
     #    self.features[self.fid] = [self.active_feature_name,
     #                        [xy for xy in self.active_coords]]
     #    self.digitize_mode = False
@@ -203,7 +220,7 @@ class Radargram(AppWindow):
     #    self.update()
     #    return self.fid-1
 
-    #def remove_feature(self, fid):
+    # def remove_feature(self, fid):
     #    try:
     #        self.features.pop(fid)
     #        self.active_coords = []
@@ -211,12 +228,12 @@ class Radargram(AppWindow):
     #    except KeyError:
     #        pass
 
-    #def add_point(self, event):
+    # def add_point(self, event):
     #    """ Record a vertex. """
     #    self.active_coords.append((event.xdata, event.ydata))
     #    self.update()
 
-    #def remove_last_point(self):
+    # def remove_last_point(self):
     #    try:
     #        self.active_coords.pop()
     #        self.update()
@@ -224,7 +241,7 @@ class Radargram(AppWindow):
     #        pass
 
     def remove_annotation(self, name):
-        """ Properly remove an annotation from the Radargram axes. """
+        """Properly remove an annotation from the Radargram axes."""
         if name in self.annotations:
             self.annotations[name][0].remove()
             del self.annotations[name]
@@ -233,7 +250,7 @@ class Radargram(AppWindow):
             return False
 
     def repaint(self, lum_scale=None, **kwargs):
-        """ Redraw the radargram raster """
+        """Redraw the radargram raster"""
         if lum_scale is None:
             lum_scale = self.lum_scale
         else:
@@ -241,7 +258,7 @@ class Radargram(AppWindow):
 
         lum_bound = max((abs(self.data.max()), abs(self.data.min()))) * lum_scale
         ybnds = self.bbox[2:]
-        data_ybnds = [self.data.shape[0]-1, 0]
+        data_ybnds = [self.data.shape[0] - 1, 0]
 
         self.ax.cla()
         if ybnds[0] is None:
@@ -254,7 +271,9 @@ class Radargram(AppWindow):
             y1 = ybnds[1]
         self.ax.set_ylim((y0, y1))
 
-        self.ax.imshow(self.data, aspect='auto', cmap=self.cmap, vmin=-lum_bound, vmax=lum_bound)
+        self.ax.imshow(
+            self.data, aspect="auto", cmap=self.cmap, vmin=-lum_bound, vmax=lum_bound
+        )
         locs = np.arange(self.ax.get_ylim()[1], self.ax.get_ylim()[0], 50)
         self.ax.set_yticks(locs)
         self.ax.set_yticklabels(np.round(locs / self.rate * 1e9).astype(int))
@@ -263,20 +282,21 @@ class Radargram(AppWindow):
         return
 
     def update(self):
-        """ Display a radargram on axes. Paints in background, and
+        """Display a radargram on axes. Paints in background, and
         all subsequent calls update lines. Passing repaint as True
         forces the background to be redrawn (for example, after a
         filter opperation).
         """
         n = self.data.shape[0]
         # These next 2 lines of code cause problems in matplotlib 3.5 - can't set them
-        #https://matplotlib.org/stable/api/prev_api_changes/api_changes_3.5.0.html?highlight=axes.lines#behaviour-changes
-        #self.ax.lines = []   ##TODO need workaround as this throws an error (can't set)
-        #self.ax.texts = []   ##TODO need workaround as this throws an error (can't set)
+        # https://matplotlib.org/stable/api/prev_api_changes/api_changes_3.5.0.html?highlight=axes.lines#behaviour-changes
+        # self.ax.lines = []   ##TODO need workaround as this throws an error (can't set)
+        # self.ax.texts = []   ##TODO need workaround as this throws an error (can't set)
 
         # Draw nodes
-        drawxy = lambda xy: self.ax.plot(xy[0], xy[1], 'or', markersize=5.0,
-                                          markeredgewidth=0.0, alpha=0.5)
+        drawxy = lambda xy: self.ax.plot(
+            xy[0], xy[1], "or", markersize=5.0, markeredgewidth=0.0, alpha=0.5
+        )
         points_ = map(drawxy, self.active_coords)
 
         # Draw annotations
@@ -285,7 +305,7 @@ class Radargram(AppWindow):
                 self.ax.add_artist(item)
 
         ## Draw previous features
-        #if len(self.features) > 0:
+        # if len(self.features) > 0:
 
         #    drawline = lambda lsxy: self.ax.plot(
         #        [i[0] for i in lsxy[1]], [i[1] for i in lsxy[1]],
@@ -298,7 +318,7 @@ class Radargram(AppWindow):
 
         # Force tight bounding
         if self.data.shape[1] > 1:
-            self.ax.set_xlim([0, self.data.shape[1]-1])
+            self.ax.set_xlim([0, self.data.shape[1] - 1])
         else:
             self.ax.set_xlim([-0.5, 0.5])
 
@@ -313,13 +333,18 @@ class Radargram(AppWindow):
         return
 
     def get_digitizer_filename(self):
-        """ Return an automatically-generated filename for digitized features. """
-        fnm = os.path.join("englacial",
-            os.path.basename(self.L.infile).split(".")[0] + "_line" + str(self.L.line) + ".txt")
+        """Return an automatically-generated filename for digitized features."""
+        fnm = os.path.join(
+            "englacial",
+            os.path.basename(self.L.infile).split(".")[0]
+            + "_line"
+            + str(self.L.line)
+            + ".txt",
+        )
         return fnm
 
     def load(self, f):
-        """ Parse a digitizer file and return a dictionary with list
+        """Parse a digitizer file and return a dictionary with list
         entries that can be dropped directly into an ImageWindow.
         """
         self.digitize_mode = False
@@ -333,7 +358,7 @@ class Radargram(AppWindow):
             while True:
                 # Read a point
                 s = f.readline()
-                if s in ('\n', ''):
+                if s in ("\n", ""):
                     break
                 else:
                     try:
@@ -342,7 +367,7 @@ class Radargram(AppWindow):
                         try:
                             x = float(self.radar_fids.index(fid))
                         except:
-                            x = float(self.radar_fids.index(fid + 4*'0'))
+                            x = float(self.radar_fids.index(fid + 4 * "0"))
                         y = float(slist[3])
                         pnt_list.append((x, y))
                     except:
@@ -351,7 +376,7 @@ class Radargram(AppWindow):
             if len(pnt_list) == 0:
                 break
             else:
-                features[i] = ['', pnt_list]
+                features[i] = ["", pnt_list]
                 i += 1
 
         self.features = features
@@ -361,12 +386,13 @@ class Radargram(AppWindow):
         return
 
     def save(self):
-        """ Returns a list of dictionaries containing the latitude, longitude,
+        """Returns a list of dictionaries containing the latitude, longitude,
         and the y-axis value of each vertex. Dictionary keys are standard
         linloc FIDs.
         """
 
-        if self.datafile is None: return 1
+        if self.datafile is None:
+            return 1
 
         dict_list = []
 
@@ -378,21 +404,24 @@ class Radargram(AppWindow):
             depths = [xy[1] for xy in coords[1]]
             fids = [self.radar_fids[loc] for loc in locs]
             RL = irlib.RecordList(self.datafile)
-            h5addrs = ['line_{0}/location_{1}/datacapture_0/echogram_0'.format(self.line, loc)
-                        for loc in locs]
+            h5addrs = [
+                "line_{0}/location_{1}/datacapture_0/echogram_0".format(self.line, loc)
+                for loc in locs
+            ]
             map(lambda h5addr: RL.AddDataset(self.fh5[h5addr]), h5addrs)
             lons = [-lon for lon in RL.lons]
             lats = RL.lats
 
             # Combine it into a dictionary
             feature_dict = dict(zip(fids, zip(lons, lats, depths)))
-            feature_dict['fnum'] = fnum
+            feature_dict["fnum"] = fnum
             dict_list.append(feature_dict)
 
         return dict_list
 
+
 class PickWindow(AppWindow):
-    """ Show a series of A-scan traces and allow picking """
+    """Show a series of A-scan traces and allow picking"""
 
     annotations = {}
     spacing = 0.1
@@ -411,18 +440,21 @@ class PickWindow(AppWindow):
         # Set up scale slider widget
         self.ax_slider = self.fig.add_axes([0.2, 0.02, 0.4, 0.03])
         self.trace_scale = 0.4
-        self.slider = matplotlib.widgets.Slider(self.ax_slider, "Amplitude Scale",
-                                                0.1, 2.0,
-                                                valinit=self.trace_scale)
+        self.slider = matplotlib.widgets.Slider(
+            self.ax_slider, "Amplitude Scale", 0.1, 2.0, valinit=self.trace_scale
+        )
         self.slider.on_changed(self._set_trace_scale)
 
         # Set up change mode widget
         self.ax_mode = self.fig.add_axes([0.8, 0.01, 0.05, 0.06])
-        self.modebuttons = matplotlib.widgets.RadioButtons(self.ax_mode,
-                                                    ["Bed", "DC"], 0)
+        self.modebuttons = matplotlib.widgets.RadioButtons(
+            self.ax_mode, ["Bed", "DC"], 0
+        )
+
         def change_mode(txt):
             self.change_mode(txt)
             self.update()
+
         self.modebuttons.on_clicked(change_mode)
 
         self.mode = "bed"
@@ -432,15 +464,17 @@ class PickWindow(AppWindow):
         self._newline(L)
         return
 
-    #def __del__(self):
+    # def __del__(self):
     #    super(PickWindow, self).__del__()
 
     def _newline(self, L):
-        """ Replace internal state with a new radar line, discarding all
-        digitizing and feature information and redrawing. """
+        """Replace internal state with a new radar line, discarding all
+        digitizing and feature information and redrawing."""
 
-        if L.data.size == 0:  #sometimes data are missing from the entire line
-            print("\n\n --- Warning:  No data exists in this line, please try loading another line with the open command ---  \n")
+        if L.data.size == 0:  # sometimes data are missing from the entire line
+            print(
+                "\n\n --- Warning:  No data exists in this line, please try loading another line with the open command ---  \n"
+            )
             L = None
             return
 
@@ -463,8 +497,8 @@ class PickWindow(AppWindow):
         return
 
     def _onclick(self, event):
-        """ Event handler for mouse clicks. Attempts to place a pick
-        point where the mouse was clicked. """
+        """Event handler for mouse clicks. Attempts to place a pick
+        point where the mouse was clicked."""
 
         if event.button == 2:
 
@@ -476,9 +510,9 @@ class PickWindow(AppWindow):
             # Identify the trace that was aimed for
             if event.xdata == None or event.inaxes is not self.ax:
                 return
-            activetrace = int(round(event.xdata/self.spacing + self.ntraces/2))
+            activetrace = int(round(event.xdata / self.spacing + self.ntraces / 2))
             try:
-                trace = self.data[:,self.trace0 + activetrace]
+                trace = self.data[:, self.trace0 + activetrace]
             except IndexError:
                 return
 
@@ -520,22 +554,22 @@ class PickWindow(AppWindow):
             return self.dc_pick_reg
 
     def _onkeypress(self, event):
-        """ Event handler for keystrokes. Moves pick locations or loads
+        """Event handler for keystrokes. Moves pick locations or loads
         different traces.
         """
 
         # See about moving a placed pick
         if self.activetrace is not None:
 
-            trace = self.data[:,self.trace0 + self.activetrace]
+            trace = self.data[:, self.trace0 + self.activetrace]
 
-            if event.key in ('j', 'down'):
+            if event.key in ("j", "down"):
                 self._clearlastpick()
                 self.yi += 1
                 self._drawpick(trace, self.yi, self.activetrace)
                 self.points[self.activetrace + self.trace0] = self.yi
 
-            elif event.key in ('k', 'up'):
+            elif event.key in ("k", "up"):
                 self._clearlastpick()
                 self.yi -= 1
                 self._drawpick(trace, self.yi, self.activetrace)
@@ -544,7 +578,7 @@ class PickWindow(AppWindow):
             self.fig.canvas.draw()
             self.update_radargram()
 
-        if event.key in ('h', 'left'):
+        if event.key in ("h", "left"):
             # Try moving to the left
             if self.trace0 > 0:
                 self.trace0 -= self.ntraces
@@ -552,7 +586,7 @@ class PickWindow(AppWindow):
                 self._clear_registers()
                 self.update()
 
-        elif event.key in ('l', 'right'):
+        elif event.key in ("l", "right"):
             # Try moving to the right
             if self.trace0 < self.data.shape[1] - self.ntraces:
                 self.trace0 += self.ntraces
@@ -563,9 +597,9 @@ class PickWindow(AppWindow):
         return
 
     def _shiftx(self, n):
-        """ Shift an x-coordinate to the proper trace position on a
-        multi-trace plot. """
-        return n*self.spacing - self.ntraces/2*self.spacing
+        """Shift an x-coordinate to the proper trace position on a
+        multi-trace plot."""
+        return n * self.spacing - self.ntraces / 2 * self.spacing
 
     def _clear_registers(self):
         self.bed_pick_reg = [None for i in self.bed_pick_reg]
@@ -573,8 +607,8 @@ class PickWindow(AppWindow):
         return
 
     def _clearlastpick(self):
-        """ Remove the last pick point drawn, according to the
-        registry. """
+        """Remove the last pick point drawn, according to the
+        registry."""
         pr = self._active_reg()
         if self.activetrace is not None:
             self.ax.lines.remove(pr[self.activetrace][0])
@@ -582,35 +616,43 @@ class PickWindow(AppWindow):
         return
 
     def _drawpick(self, trace, yi, activetrace):
-        """ Draw a pick mark on the given trace at yi, and update the
-        registry. """
+        """Draw a pick mark on the given trace at yi, and update the
+        registry."""
         trace = trace / abs(trace).max() * self.spacing * self.trace_scale
 
-        if self.mode == 'bed':
+        if self.mode == "bed":
             pr = self.bed_pick_reg
             sty = "ob"
-        elif self.mode == 'dc':
+        elif self.mode == "dc":
             pr = self.dc_pick_reg
             sty = "or"
 
-        pr[activetrace] = self.ax.plot(trace[int(yi)] + self._shiftx(activetrace),
-                                       -self.time[int(yi)], sty, alpha=0.4)
+        pr[activetrace] = self.ax.plot(
+            trace[int(yi)] + self._shiftx(activetrace),
+            -self.time[int(yi)],
+            sty,
+            alpha=0.4,
+        )
 
         return self.ax.lines
 
     def _get_pick_fnm(self):
-        """ Autogenerate a filename for pickfiles. """
-        fnm = os.path.join('picking', '{0}_line{1}.csv'.format(
-                                os.path.basename(self.L.infile).split('.')[0],
-                                self.L.line))
+        """Autogenerate a filename for pickfiles."""
+        fnm = os.path.join(
+            "picking",
+            "{0}_line{1}.csv".format(
+                os.path.basename(self.L.infile).split(".")[0], self.L.line
+            ),
+        )
         return fnm
 
     def update(self):
-        """ Redraw axes and data """
-        
+        """Redraw axes and data"""
+
         self.ax.cla()
-        self.ax.set_xlim(-self.spacing * (self.ntraces+2) / 2,
-                          self.spacing * self.ntraces / 2)
+        self.ax.set_xlim(
+            -self.spacing * (self.ntraces + 2) / 2, self.spacing * self.ntraces / 2
+        )
         self.ax.set_ylim(self.ylim)
 
         for i in range(self.ntraces):
@@ -618,24 +660,26 @@ class PickWindow(AppWindow):
 
             if trno < self.data.shape[1]:
                 # Plot the trace
-                trace = self.data[:,trno]
+                trace = self.data[:, trno]
                 trace = trace / abs(trace).max() * self.spacing * self.trace_scale
-                self.ax.plot(trace + self._shiftx(i), -self.time, '-k')
+                self.ax.plot(trace + self._shiftx(i), -self.time, "-k")
 
                 # Plot any existing picks
                 oldmode = self.mode
                 if not np.isnan(self.bed_points[trno]):
-                    self.mode = 'bed'
+                    self.mode = "bed"
                     self._drawpick(trace, self.bed_points[trno], i)
                 if not np.isnan(self.dc_points[trno]):
-                    self.mode = 'dc'
+                    self.mode = "dc"
                     self._drawpick(trace, self.dc_points[trno], i)
                 self.mode = oldmode
 
         # using fixed locator for labels
         locs = self.ax.get_yticks().tolist()
         self.ax.yaxis.set_major_locator(mticker.FixedLocator(locs))
-        self.ax.set_yticklabels(["{:0d}".format(np.round(x*-1e9).astype(int)) for x in locs])
+        self.ax.set_yticklabels(
+            ["{:0d}".format(np.round(x * -1e9).astype(int)) for x in locs]
+        )
 
         self.ax.set_title("Line {0}, mode: {1}".format(self.L.line, self.mode))
 
@@ -648,21 +692,25 @@ class PickWindow(AppWindow):
         return
 
     def update_radargram(self):
-        """ Send picking annotations to a connected Radargram. """
+        """Send picking annotations to a connected Radargram."""
         if self.rg is not None:
             for name in ("picklim0", "picklim1", "bedpick", "dcpick"):
                 self.rg.remove_annotation(name)
             yl = self.rg.ax.get_ylim()
 
-            self.rg.annotations["picklim0"] = \
-                self.rg.ax.plot((self.trace0, self.trace0), yl, "-y")
-            self.rg.annotations["picklim1"] = \
-                self.rg.ax.plot((self.trace0+self.ntraces, self.trace0+self.ntraces), yl, "-y")
+            self.rg.annotations["picklim0"] = self.rg.ax.plot(
+                (self.trace0, self.trace0), yl, "-y"
+            )
+            self.rg.annotations["picklim1"] = self.rg.ax.plot(
+                (self.trace0 + self.ntraces, self.trace0 + self.ntraces), yl, "-y"
+            )
 
-            self.rg.annotations["bedpick"] = \
-                self.rg.ax.plot(self.bed_points, "-b", alpha=0.5)
-            self.rg.annotations["dcpick"] = \
-                self.rg.ax.plot(self.dc_points, "-r", alpha=0.7)
+            self.rg.annotations["bedpick"] = self.rg.ax.plot(
+                self.bed_points, "-b", alpha=0.5
+            )
+            self.rg.annotations["dcpick"] = self.rg.ax.plot(
+                self.dc_points, "-r", alpha=0.7
+            )
 
             self.rg.fig.canvas.draw()
         else:
@@ -670,22 +718,22 @@ class PickWindow(AppWindow):
         return
 
     def change_mode(self, mode):
-        """ Change picking mode between bed and direct coupling. """
+        """Change picking mode between bed and direct coupling."""
         self.mode = mode.lower()
-        if mode.lower() == 'bed':
+        if mode.lower() == "bed":
             self.points = self.bed_points
-        elif mode.lower() == 'dc':
+        elif mode.lower() == "dc":
             self.points = self.dc_points
         return
 
     def connect_radargram(self, rg):
-        """ Connect a Radargram instance so that the PickWindow can modify it. """
+        """Connect a Radargram instance so that the PickWindow can modify it."""
         self.rg = rg
         self.update()
         return
 
     def autopick_dc(self, t0=10, tf=150):
-        """ Attempt to pick the first break of the direct-coupling wave.
+        """Attempt to pick the first break of the direct-coupling wave.
         Optional constraints on start and end time can be passed to improve
         results.
 
@@ -705,7 +753,7 @@ class PickWindow(AppWindow):
         return
 
     def autopick_bed(self, t0=150, tf=10000, lbnd=None, rbnd=None):
-        """ Attempt to pick the first break of the direct-coupling wave.
+        """Attempt to pick the first break of the direct-coupling wave.
         Optional constraints on start and end time can be passed to improve
         results.
 
@@ -725,7 +773,7 @@ class PickWindow(AppWindow):
         return
 
     def save_picks(self, fnm=None):
-        """ Save picks. If no fnm is provided, generate one based on self.L. """
+        """Save picks. If no fnm is provided, generate one based on self.L."""
         if fnm is None:
             fnm = self._get_pick_fnm()
         fh = irlib.FileHandler(fnm, self.L.line, fids=self.L.fids)
@@ -736,8 +784,8 @@ class PickWindow(AppWindow):
         return
 
     def load_picks(self, fnm=None):
-        """ Load picks. If no *fnm* is provided, attempt to load from an
-        autogenerated location. """
+        """Load picks. If no *fnm* is provided, attempt to load from an
+        autogenerated location."""
         if fnm is None:
             fnm = self._get_pick_fnm()
         if os.path.isfile(fnm):
@@ -755,21 +803,23 @@ class PickWindow(AppWindow):
 
 
 class MapWindow(AppWindow):
-    """ Displays a simple map of trace locations """
+    """Displays a simple map of trace locations"""
 
     def __init__(self, L):
         super(MapWindow, self).__init__((4, 4))
         self._newline(L)
-        self.fig.canvas.manager.set_window_title("Map") 
+        self.fig.canvas.manager.set_window_title("Map")
         self.fig.tight_layout()
         return
 
     def _newline(self, L):
-        """ Replace internal state with a new radar line, discarding all
-        digitizing and feature information and redrawing. """
+        """Replace internal state with a new radar line, discarding all
+        digitizing and feature information and redrawing."""
 
-        if L.data.size == 0:  #sometimes data are missing from the entire line
-            print("\n\n --- Warning:  No data exists in this line, please try loading another line with the open command ---  \n")
+        if L.data.size == 0:  # sometimes data are missing from the entire line
+            print(
+                "\n\n --- Warning:  No data exists in this line, please try loading another line with the open command ---  \n"
+            )
             L = None
             return
 
@@ -781,16 +831,17 @@ class MapWindow(AppWindow):
         return
 
     def update(self):
-        """ Redraw the map. """
+        """Redraw the map."""
         self.ax.set_xlabel("Eastings (m)")
         self.ax.set_ylabel("Northings (m)")
         self.ax.plot(self.x, self.y, ".k")
         self.ax.axis("equal")
         self.fig.canvas.draw()
 
+
 class ConnectionError(Exception):
     def __init__(self, message="No message"):
         self.message = message
+
     def __str__(self):
         return self.message
-

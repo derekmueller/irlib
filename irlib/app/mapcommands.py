@@ -1,13 +1,12 @@
-
 from __future__ import print_function
 import matplotlib.pyplot
 from . import commands
 from . import command_parser as cp
 from .components import MapWindow
 
+
 class MapCall(commands.Command):
-    """ This is a "General" type command that dispatches to "Map" type commands.
-    """
+    """This is a "General" type command that dispatches to "Map" type commands."""
 
     _type = "General"
     cmd = "map"
@@ -18,6 +17,7 @@ class MapCall(commands.Command):
     Commands related to the map window. Type 'map', and then the specific
     command. Type 'help' for a list of possibilities.
     """
+
     def apply(self, app, args):
         if len(args) == 0:
             print("Type 'help' or 'help map' for instructions.")
@@ -27,10 +27,12 @@ class MapCall(commands.Command):
             print("No mapping command '{0}' exists".format(args[0]))
         return
 
+
 class MapCommandBase(commands.Command):
     _type = "Map"
     cmd = None
     helpstr = ""
+
 
 class MapOn(MapCommandBase):
 
@@ -42,6 +44,7 @@ class MapOn(MapCommandBase):
         app.appwindows.append(w)
         return
 
+
 class MapOff(MapCommandBase):
 
     cmd = "off"
@@ -52,5 +55,3 @@ class MapOff(MapCommandBase):
             matplotlib.pyplot.close(w.fig)
             app.remove_appwindow(w)
             del w
-
-

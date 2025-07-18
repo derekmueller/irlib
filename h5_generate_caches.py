@@ -7,7 +7,7 @@ from irlib import Survey
 import os, sys, argparse
 import traceback
 
-#replacing getopt and def syntax() with argparse
+# replacing getopt and def syntax() with argparse
 prog_description = """
     SYNTAX: h5_generate_caches HDF_SURVEY [OPTIONS]
          
@@ -15,20 +15,60 @@ prog_description = """
     """
 prog_epilog = " Example: h5_generate_caches.py survey.h5  "
 
-parser = argparse.ArgumentParser(description = prog_description, epilog=prog_epilog)
+parser = argparse.ArgumentParser(description=prog_description, epilog=prog_epilog)
 parser.add_argument("infile", help="input HDF (.h5) filename")
-parser.add_argument("-d", "--dir_cache", help="cache directory (default: cache/)", default='cache/')
-parser.add_argument("-r", "--remove_within", help="remove stationary traces by averaging all traces within # m (defaults to 0 m or off), recommend 3 for L1 GPS", 
-                    default=0,type=float)
-parser.add_argument("--dc", help="specify datacapture (default: 0)", default=0,type=int)
-parser.add_argument("-n","--remove_nans", help="remove traces with NaN coordinates", action="store_true")
-parser.add_argument("-i","--interp_nans", help="interpolate over NaN coordinates (overrides --remove_nans)", action="store_true")
-parser.add_argument("-s", "--smoothen_coords", help="smoothen coordinates (overrides --interp_nans)", action="store_true")
-parser.add_argument("-b", "--remove_blanks", help="remove blank traces caused by triggering failure", action="store_true")
-parser.add_argument("-g", "--fix_gps", help="fix static GPS issues", action="store_true")
-parser.add_argument("-f", "--force_cache", help="force regeneration of existing caches", action="store_true")
-parser.add_argument("-q", "--quiet", help="silence standard output", action="store_true")
-parser.add_argument("-v", "--verbose", help="print failed datacaptures", action="store_true") 
+parser.add_argument(
+    "-d", "--dir_cache", help="cache directory (default: cache/)", default="cache/"
+)
+parser.add_argument(
+    "-r",
+    "--remove_within",
+    help="remove stationary traces by averaging all traces within # m (defaults to 0 m or off), recommend 3 for L1 GPS",
+    default=0,
+    type=float,
+)
+parser.add_argument(
+    "--dc", help="specify datacapture (default: 0)", default=0, type=int
+)
+parser.add_argument(
+    "-n",
+    "--remove_nans",
+    help="remove traces with NaN coordinates",
+    action="store_true",
+)
+parser.add_argument(
+    "-i",
+    "--interp_nans",
+    help="interpolate over NaN coordinates (overrides --remove_nans)",
+    action="store_true",
+)
+parser.add_argument(
+    "-s",
+    "--smoothen_coords",
+    help="smoothen coordinates (overrides --interp_nans)",
+    action="store_true",
+)
+parser.add_argument(
+    "-b",
+    "--remove_blanks",
+    help="remove blank traces caused by triggering failure",
+    action="store_true",
+)
+parser.add_argument(
+    "-g", "--fix_gps", help="fix static GPS issues", action="store_true"
+)
+parser.add_argument(
+    "-f",
+    "--force_cache",
+    help="force regeneration of existing caches",
+    action="store_true",
+)
+parser.add_argument(
+    "-q", "--quiet", help="silence standard output", action="store_true"
+)
+parser.add_argument(
+    "-v", "--verbose", help="print failed datacaptures", action="store_true"
+)
 
 args = parser.parse_args()
 
@@ -43,14 +83,15 @@ if not args.quiet:
 lines = S.GetLines()
 
 for line in lines:
-    line_no = line.split('_')[1]
+    line_no = line.split("_")[1]
     cache_fnm = S.GetLineCacheName(line_no, dc=args.dc, cache_dir=args.dir_cache)
     if os.path.isfile(cache_fnm) and not args.force_cache:
         pass
     else:
         if not args.quiet:
-            print("\tCaching line {0}, datacapture {1}...".format(str(line),
-                                                                  str(args.dc)))
+            print(
+                "\tCaching line {0}, datacapture {1}...".format(str(line), str(args.dc))
+            )
         try:
             L = S.ExtractLine(line_no, datacapture=args.dc, verbose=args.verbose)
         except (AttributeError, IndexError):
@@ -81,4 +122,3 @@ for line in lines:
                 del L
             except:
                 traceback.print_exc()
-

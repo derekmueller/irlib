@@ -1,27 +1,32 @@
-""" This file defines the filter commands available from irlib-based apps. """
+"""This file defines the filter commands available from irlib-based apps."""
 
 from .commands import Command
+
 
 def handle_no_args():
     # intended to be used as a decorator - if there are no arguments, then print filter history as exit
     pass
 
+
 class FilterCommandBase(Command):
-    """ A FilterCommand is implemented as a class with a command-line signature and
+    """A FilterCommand is implemented as a class with a command-line signature and
     an *apply* method that takes an appropriate Gather object as an argument.
     """
 
     _type = "Filter"
     cmd = "__filtercommandclass"
-    helpstr = ("This is the base class for FilterCommands, which can be used "
-               "to modify Gather data in-place.")
+    helpstr = (
+        "This is the base class for FilterCommands, which can be used "
+        "to modify Gather data in-place."
+    )
 
     def __init__(self):
         return
 
     def apply(self, G, args):
-        """ Overload this method to perform operations on Gather object *G*. """
+        """Overload this method to perform operations on Gather object *G*."""
         raise Exception("apply() is undefined in FilterCommand baseclass")
+
 
 class LinearGainControl(FilterCommandBase):
     cmd = "gc"
@@ -40,6 +45,7 @@ class LinearGainControl(FilterCommandBase):
         G.DoTimeGainControl(npow=npow)
         return
 
+
 class AutoGainControl(FilterCommandBase):
     cmd = "agc"
     helpstr = """Automatic gain control
@@ -54,6 +60,7 @@ class AutoGainControl(FilterCommandBase):
         G.DoAutoGainControl(5e-8)
         return
 
+
 class ReflectionPower(FilterCommandBase):
     cmd = "power"
     helpstr = """Reflection power
@@ -62,9 +69,11 @@ class ReflectionPower(FilterCommandBase):
 
     Square the trace amplitude.
     """
+
     def apply(self, G, args):
         G.data = G.data**2
         return
+
 
 class Lowpass_FD(FilterCommandBase):
     cmd = "lowpass"
@@ -74,6 +83,7 @@ class Lowpass_FD(FilterCommandBase):
 
     Apply a frequency domain lowpass filter implemented using a windowed sinc
     kernel. Optional arguments are cutoff frequency and bandwidth. """
+
     def apply(self, G, args):
         if len(args) > 0:
             co = float(args[0])
@@ -83,8 +93,9 @@ class Lowpass_FD(FilterCommandBase):
             bw = float(args[1])
         else:
             bw = 5e6
-        G. DoWindowedSinc(cutoff=co, bandwidth=bw, mode="lowpass")
+        G.DoWindowedSinc(cutoff=co, bandwidth=bw, mode="lowpass")
         return
+
 
 class Highpass_FD(FilterCommandBase):
     cmd = "highpass"
@@ -94,6 +105,7 @@ class Highpass_FD(FilterCommandBase):
 
     Apply a frequency domain highpass filter implemented using a windowed sinc
     kernel. Optional arguments are cutoff frequency and bandwidth. """
+
     def apply(self, G, args):
         if len(args) > 0:
             co = float(args[0])
@@ -103,8 +115,9 @@ class Highpass_FD(FilterCommandBase):
             bw = float(args[1])
         else:
             bw = 5e6
-        G.DoWindowedSinc(cutoff=co, bandwidth=bw, mode='highpass')
+        G.DoWindowedSinc(cutoff=co, bandwidth=bw, mode="highpass")
         return
+
 
 class Reverse(FilterCommandBase):
     cmd = "reverse"
@@ -115,9 +128,11 @@ class Reverse(FilterCommandBase):
     Flip the traces in the radar line such that they are ordered from last to
     first.
     """
+
     def apply(self, G, args):
         G.Reverse()
         return
+
 
 class Lowpass_TD(FilterCommandBase):
     cmd = "lowpass_td"
@@ -127,6 +142,7 @@ class Lowpass_TD(FilterCommandBase):
 
     Apply a frequency domain lowpass filter implemented as a moving average
     with a blackman window. Optional argument is sample width of the filter. """
+
     def apply(self, G, args):
         if len(args) > 0:
             ns = int(args[0])
@@ -134,8 +150,9 @@ class Lowpass_TD(FilterCommandBase):
                 ns += 1
         else:
             ns = 21
-        G. DoMoveAvg(ns, kind="blackman", mode="lowpass")
+        G.DoMoveAvg(ns, kind="blackman", mode="lowpass")
         return
+
 
 class Highpass_TD(FilterCommandBase):
     cmd = "highpass_td"
@@ -146,6 +163,7 @@ class Highpass_TD(FilterCommandBase):
     Apply a frequency domain highpass filter implemented as a
     spectrally-inverted moving average with a blackman window. Optional
     argument is sample width of the filter. """
+
     def apply(self, G, args):
         if len(args) > 0:
             ns = int(args[0])
@@ -153,8 +171,9 @@ class Highpass_TD(FilterCommandBase):
                 ns += 1
         else:
             ns = 7
-        G.DoMoveAvg(ns, kind="blackman", mode='highpass')
+        G.DoMoveAvg(ns, kind="blackman", mode="highpass")
         return
+
 
 class Dewow(FilterCommandBase):
     cmd = "dewow"
@@ -163,9 +182,11 @@ class Dewow(FilterCommandBase):
     dewow
 
     Apply a "dewowing" filter to remove instrument drift."""
+
     def apply(self, G, args):
         G.Dewow()
         return
+
 
 class RemoveRinging(FilterCommandBase):
     helpstr = """De-ringing filter
@@ -175,9 +196,11 @@ class RemoveRinging(FilterCommandBase):
     Remove constant horizontal reflectors (e.g. instrument ringing) through
     eigenimage decomposition."""
     cmd = "ringing"
+
     def apply(self, G, args):
         G.RemoveRinging()
         return
+
 
 class MigrateFK(FilterCommandBase):
     cmd = "migfk"
@@ -196,4 +219,3 @@ class MigrateFK(FilterCommandBase):
             t0_offset = 0
         G.MigrateFK(t0_adjust=t0_offset)
         return
-

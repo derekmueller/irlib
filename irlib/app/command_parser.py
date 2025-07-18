@@ -1,9 +1,9 @@
-
 from __future__ import print_function
 import traceback
 
+
 def apply_command(registry, inputs, stateobj, cmdtype):
-    """ Attempt to apply a command, raising a KeyError if a suitable command cannot be found.
+    """Attempt to apply a command, raising a KeyError if a suitable command cannot be found.
 
     Parameters
     ----------
@@ -30,23 +30,25 @@ def apply_command(registry, inputs, stateobj, cmdtype):
             print(CommandApplicationError(e))
 
     else:
-         raise KeyError("No command definition '{0}' found".format(cmd))
+        raise KeyError("No command definition '{0}' found".format(cmd))
 
 
 def help_command(registry, cmd):
-    """ Print the help documentation for *cmd*, or raise Key if it cannot be
-    found. """
+    """Print the help documentation for *cmd*, or raise Key if it cannot be
+    found."""
     if cmd in registry:
         return registry[cmd].helpstr
     else:
-         raise KeyError("No command definition '{0}' found".format(cmd))
+        raise KeyError("No command definition '{0}' found".format(cmd))
+
 
 def list_filters():
     return sorted(get_commands(filters).keys())
 
+
 class CommandApplicationError(Exception):
     def __init__(self, exception):
         self.e = exception
+
     def __str__(self):
         return self.e.__str__()
-

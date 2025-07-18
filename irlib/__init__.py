@@ -17,6 +17,7 @@ from .filehandler import FileHandler, FileHandlerError
 # Application-specific libs
 # from . import app
 from . import filter_defs
+
 # from .filter_defs import ApplyFilter
 
 # Accessory modules
@@ -24,8 +25,17 @@ from . import brp
 from . import polarity
 from . import gpx
 from . import misc
-#from . import itools
 
-__all__ = ['survey', 'gather', 'recordlist', 'filehandler', 'misc', 'gpx',
-           'itools', 'brp', 'polarity']
+# from . import itools
 
+__all__ = [
+    "survey",
+    "gather",
+    "recordlist",
+    "filehandler",
+    "misc",
+    "gpx",
+    "itools",
+    "brp",
+    "polarity",
+]

@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-""" Benchmark program for irlib app framework """
+"""Benchmark program for irlib app framework"""
 
 import sys
 
@@ -20,4 +20,3 @@ console.register(irlib.app.filters)
 console.register(irlib.app.pickcommands)
 console.register(irlib.app.mapcommands)
 console.start()
-
