@@ -179,9 +179,7 @@ for i, infile in enumerate(infiles):
 
     if args.wpt:
         # Create a shapefile for the metadata
-        meta = meta[(meta.lon != "None")]
-        meta = meta[(meta.lat != "None")]
-        meta = meta[(meta.alt_asl != "None")]
+        meta = meta.dropna(subset=["lon", "lat", "alt_asl"])
         proj = "EPSG:4326"  # Assuming WGS84
         # Creating a points while zipping 3 coordinates(3 dimension)
         if meta.shape[0] == 0:
@@ -243,7 +241,7 @@ for i, infile in enumerate(infiles):
     if args.line:
 
         # Create a shapefile for the metadata - lines only
-        meta.dropna(subset=["lon", "lat", "alt_asl"])
+        meta = meta.dropna(subset=["lon", "lat", "alt_asl"])
         if meta.shape[0] == 0:
             print("No valid location data found - cannot generate shapefile(s)")
             continue
