@@ -84,7 +84,7 @@ def substituteXMLval(name, newval, xml):
     metadata fragments with *newval*.
     """
     newxml = re.sub(
-        r"<Name>{0}</Name>[\r]?\n<Val>.*</Val>".format(name.replace(" ", "\s")),
+        r"<Name>{0}</Name>[\r]?\n<Val>.*</Val>".format(name.replace(" ", r"\s")),
         r"<Name>{0}</Name>\r\n<Val>{1}</Val>".format(name, newval),
         xml,
         flags=re.IGNORECASE,
@@ -366,7 +366,7 @@ for line in lines:  # for every line...
                     hdfgpstimes.append(np.nan)
                 else:
                     # if there is a GPS timestamp use that instead
-                    gpstimestamp = re.search("[0-9]{6}\.?\d*", m.group()).group()
+                    gpstimestamp = re.search(r"[0-9]{6}\.?\d*", m.group()).group()
                     hdfgpstimes.append(
                         get_time(gpstimestamp, timestamp, 0)
                     )  # GPS time IS in UTC so tzoffset must be 0
