@@ -9,7 +9,6 @@ import numpy as np
 import traceback
 import datetime
 import h5py
-import pdb
 
 
 def pcdateconvert(pcdatetime, datefmt="ddmm"):
@@ -91,6 +90,12 @@ class RecordList:
     """
 
     def __init__(self, filename=None):
+
+        # make sure that the filename is actually a filename, not an h5 file itself
+        if isinstance(filename, h5py.File):
+            # this would be the correct filename
+            filename = filename.filename
+
         self.filename = filename
 
         # now with more metadata fields
@@ -260,6 +265,7 @@ class RecordList:
                 self.startbuf.append(startbuf.split(":")[1])
                 self.buftime.append(buftime.split(":")[1])
                 self.pps.append(pps)
+
                 # timestamp for this is in a completely different place.
                 self.timestamps.append(
                     isodate(TimeFromComment(self.filename, splitname[1], splitname[2]))

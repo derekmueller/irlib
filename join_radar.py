@@ -266,6 +266,10 @@ try:
         PROL.loc[(PROL.rating == -9), "err"] = float("nan")  # for unrated
         PROL["line"] = line
         PROL["bed_elev"] = PROL.elev - PROL.thick
+        # TODO address FutureWarning: The behavior of DataFrame concatenation with empty
+        # or all-NA entries is deprecated. In a future version, this will no longer
+        # exclude empty or all-NA columns when determining the result dtypes. To retain
+        # the old behavior, exclude the relevant entries before the concat operation.
         df = pd.concat([df, PROL])
 
     # Now should have a dataframe with all lines

@@ -80,7 +80,7 @@ datasets = [
     if (isinstance(fin[name], h5py.Dataset) and "picked" not in name)
 ]
 
-metadata = irlib.RecordList(fin)
+metadata = irlib.RecordList(fin.filename)
 print("reading metadata...")
 failed = []
 for i, dataset in enumerate(datasets):
