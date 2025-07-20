@@ -26,11 +26,11 @@ dependencies for irlib.  For more on the dependencies themselves, see below.
 
 	This will be a bare-bones installation to run irlib:
 		
-		``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas``
+		``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas conda-build``
 
 	As above but also installs vitables, an hdf viewer, and sphinx with numpydoc (for documentation):
 		
-		``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas sphinx vitables numpydoc``
+		``conda create -n irlib -c conda-forge python h5py scipy matplotlib cython geopandas conda-build sphinx vitables numpydoc``
 
 3.  To run irlib you need to work out of a conda-aware console and type, *this must be done before every session*:
 

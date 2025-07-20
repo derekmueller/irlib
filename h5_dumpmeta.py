@@ -15,15 +15,35 @@ import os.path
 import glob
 import traceback
 import argparse
-
-try:
-    import StringIO  ## for Python 2
-except ImportError:
-    import io as StringIO  ## for Python 3
-
+import io as StringIO
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString
+
+
+def write_csv(data, outfile):
+    data.to_csv(outfile + ".csv", sep=",", index=False)
+    pass
+
+
+def write_geopackage(data, outfile):
+    data.to_file(outfile, driver="GPKG")
+    pass
+
+
+def write_geojson(data, outfile):
+    data.to_file(outfile, driver="GeoJSON")
+    pass
+
+
+def write_kml(data, outfile):
+    data.to_file(outfile, driver="KML")
+    pass
+
+
+def write_shapefile(data, outfile):
+    data.to_file(outfile)
+    pass
 
 
 def meta2pd(infile):
@@ -102,22 +122,42 @@ parser.add_argument(
 parser.add_argument(
     "-o",
     "--outfile",
-    help="output file BASENAME [if missing, will be automatically generated]",
+    help="output file BASENAME (could include a path) [if missing, will be automatically generated] OR if you used a wildcard in your infile it will represent an output path",
 )
 parser.add_argument("-c", "--csv", help="create csv metadata file", action="store_true")
 parser.add_argument(
-    "-w", "--wpt", help="create a waypoint metadata shapefile", action="store_true"
+    "-w", "--wpt", help="create a waypoint metadata geomatics file", action="store_true"
 )
 parser.add_argument(
-    "-l", "--line", help="create a line metadata shapefile", action="store_true"
+    "-l", "--ln", help="create a line metadata geomatics file", action="store_true"
 )
 parser.add_argument(
     "-g",
-    "--geojson",
-    help="create waypoint or line metadata in GeoJSON format, not shapefile",
+    "--geopackage",
+    help="output in geopackage format",
     action="store_true",
 )
+parser.add_argument(
+    "-j",
+    "--geojson",
+    help="output in GeoJSON format",
+    action="store_true",
+)
+parser.add_argument(
+    "-k",
+    "--kml",
+    help="output in KML (Google Earth) format -- Note that there are sometimes type conversion bugs so this format is not recommended for wpts",
+    action="store_true",
+)
+parser.add_argument(
+    "-s",
+    "--shapefile",
+    help="output in Shapefile format",
+    action="store_true",
+)
+
 parser.add_argument("--clobber", help="overwrite existing files", action="store_true")
+
 args = parser.parse_args()
 
 try:
@@ -125,22 +165,20 @@ try:
 except ImportError:
     print("Cannot find irlib libraries, check your path/environment")
 
-
+# Expand file list if there are wildcards
 infiles = glob.glob(args.infile)
 infiles.sort()
 outfiles = [f.rsplit(".")[0] for f in infiles]
 
-if len(infiles) > 1 and args.outfile:
-    sys.stderr.write(
-        "You cannot name metadata from these {} input files {}\n".format(
-            len(infiles), args.outfile
-        )
-    )
-    sys.exit(2)
-if len(infiles) == 1 and args.outfile:
-    outfiles[0] = args.outfile
+# interpret outfiles as a path if there is a wildcard in the infile list
+if "*" in args.infile or "?" in args.infile:
+    outfiles = [os.path.join(args.outfile, fname) for fname in outfiles]
 
+else:
+    if len(infiles) == 1 and args.outfile:
+        outfiles[0] = args.outfile
 
+# go through all files.
 for i, infile in enumerate(infiles):
     sys.stderr.write("\n\n---\t" + infile + "\t---\n")
 
@@ -149,160 +187,135 @@ for i, infile in enumerate(infiles):
         sys.exit(1)
 
     meta = meta2pd(infile)
-    # print to standard out - I commented this out since it is tedious
-    # sys.stdout.write(meta.to_csv(sep=',', index=False))
+    lines = meta.line.unique()
+    print(f"File {infile} has {len(lines)} lines and {len(meta)} traces")
+    for line in lines:
+        print(
+            f"Line {line}\t{len(meta.loc[meta.line == line])} traces \tFrom "
+            f"{meta.loc[meta.line == line, 'timestamp'].min()} to "
+            f"{meta.loc[meta.line == line, 'timestamp'].max()}"
+        )
+
+    print("\n")
+    print("Sample metadata....")
     print("\n")
     print(
         meta
     )  # this will give users a sample of what is there without the long scroll
     print("\n")
-    if args.csv:
-        if not os.path.isfile(outfiles[i] + ".csv"):
-            meta.to_csv(outfiles[i] + ".csv", sep=",", index=False)
-            sys.stderr.write(
-                "\t{fnm} written\n".format(fnm=os.path.basename(outfiles[i] + ".csv"))
-            )
-        else:
-            if args.clobber:
-                meta.to_csv(outfiles[i] + ".csv", sep=",", index=False)
-                sys.stderr.write(
-                    "\t{fnm} overwritten\n".format(
-                        fnm=os.path.basename(outfiles[i] + ".csv")
-                    )
-                )
-            else:
-                sys.stderr.write(
-                    "\t{fnm} exists and was not overwritten\n".format(
-                        fnm=os.path.basename(outfiles[i] + ".csv")
-                    )
-                )
 
-    if args.wpt:
-        # Create a shapefile for the metadata
-        meta = meta.dropna(subset=["lon", "lat", "alt_asl"])
-        proj = "EPSG:4326"  # Assuming WGS84
-        # Creating a points while zipping 3 coordinates(3 dimension)
-        if meta.shape[0] == 0:
-            print("No valid location data found - cannot generate shapefile(s)")
-            continue
-        pts_gd = gpd.GeoDataFrame(
-            meta,
-            geometry=gpd.points_from_xy(
-                meta.lon.astype(float), meta.lat.astype(float), z=meta.alt_asl, crs=proj
-            ),
+    # Create geomatics layer for the metadata  (point first then line)
+    meta_geom = meta.dropna(subset=["lon", "lat", "alt_asl"])
+    proj = "EPSG:4326"  # Assuming WGS84
+    # Creating a points while zipping 3 coordinates(3 dimension)
+    if meta_geom.shape[0] == 0:
+        print("No valid location data found - cannot generate shapefile(s)")
+        continue
+    pts_gdf = gpd.GeoDataFrame(
+        meta_geom,
+        geometry=gpd.points_from_xy(
+            meta_geom.lon.astype(float),
+            meta_geom.lat.astype(float),
+            z=meta_geom.alt_asl,
+            crs=proj,
+        ),
+    )
+    # this is required to create geopackage output (the field name FID is reserved)
+    pts_gdf.rename(columns={"FID": "ipr_FID"}, inplace=True)
+    # this will remove a conversion error for kml (bit of a workaround for a suspected library problem)
+    # KML files will give warnings about this and will be corrupt. If that happens run again with clobber
+    # and see if the data fields are correct.
+    pts_gdf["echogram"] = pts_gdf["echogram"].astype("Int64")
+
+    # create a line dataframe
+    lines = meta_geom.line.unique()  # finding all the unique object ids
+    index_list = []
+    geometry_list = []
+    for ln in lines:  # looping through lines
+        ln_df = meta_geom.loc[
+            meta_geom.line == ln
+        ]  # subsetting pandas dataframe to the specific object
+        line = LineString(
+            zip(ln_df.lon.astype(float), ln_df.lat.astype(float), ln_df.alt_asl)
+        )
+        index_list.append(ln)
+        geometry_list.append(line)
+
+    lines_gdf = gpd.GeoDataFrame(index=index_list, crs=proj, geometry=geometry_list)
+    lines_gdf["lines"] = lines
+
+    output_basename = outfiles[i]
+
+    output_layers = {
+        "csv": meta,
+        "wpt": pts_gdf,
+        "ln": lines_gdf,
+    }
+
+    output_formats = {
+        "csv": {"ext": ".csv", "func": write_csv},
+        "geopackage": {"ext": ".gpkg", "func": write_geopackage},
+        "geojson": {"ext": ".geojson", "func": write_geojson},
+        "kml": {"ext": ".kml", "func": write_kml},
+        "shapefile": {"ext": ".shp", "func": write_shapefile},
+    }
+
+    # Example: flags for formats and data types, from user args
+    formats_selected = [fmt for fmt in output_formats if getattr(args, fmt)]
+    layers_selected = [layer for layer in output_layers if getattr(args, layer)]
+    # csv layer is a kind of default, but special case
+    if "csv" not in layers_selected:
+        layers_selected.append("csv")
+    layers_selected.sort()
+    formats_selected.sort()
+
+    # Flag some potential issues to user
+    if not formats_selected:
+        print("No file output requested\n")
+
+    if (
+        "wpt" not in layers_selected
+        and "line" not in layers_selected
+        and len(formats_selected) > 1
+    ):
+        print(
+            "Geomatics file(s) not output, please specify if you want lines and/or point with --wpts and --lines\n"
         )
 
-        if not args.geojson:
-            if not os.path.isfile(outfiles[i] + "_wpt.shp"):
-                pts_gd.to_file(outfiles[i] + "_wpt.shp")
-                sys.stderr.write(
-                    "\t{fnm} written\n".format(
-                        fnm=os.path.basename(outfiles[i] + "_wpt.shp")
-                    )
-                )
-            else:
-                if args.clobber:
-                    pts_gd.to_file(outfiles[i] + "_wpt.shp")
-                    sys.stderr.write(
-                        "\t{fnm} overwritten\n".format(
-                            fnm=os.path.basename(outfiles[i] + "_wpt.shp")
-                        )
-                    )
-                else:
-                    sys.stderr.write(
-                        "\t{fnm} exists and was not overwritten\n".format(
-                            fnm=os.path.basename(outfiles[i] + "_wpt.shp")
-                        )
-                    )
+    for layer in layers_selected:
+        for fmt in formats_selected:
+            # This is to handle csv output (slightly different from others)
+            if fmt == "csv" and layer == "csv":
+                df = output_layers[layer]
+                ext = output_formats[fmt]["ext"]
+                write_func = output_formats[fmt]["func"]
+                outname = f"{output_basename}{ext}"
 
-        else:  # GeoJSON
-            if not os.path.isfile(outfiles[i] + "_wpt.geojson"):
-                pts_gd.to_file(outfiles[i] + "_wpt.geojson", driver="GeoJSON")
-                sys.stderr.write(
-                    "\t{fnm} written\n".format(
-                        fnm=os.path.basename(outfiles[i] + "_wpt.geojson")
-                    )
-                )
-            else:
-                if args.clobber:
-                    pts_gd.to_file(outfiles[i] + "_wpt.geojson", driver="GeoJSON")
-                    sys.stderr.write(
-                        "\t{fnm} overwritten\n".format(
-                            fnm=os.path.basename(outfiles[i] + "_wpt.geojson")
-                        )
-                    )
-                else:
-                    sys.stderr.write(
-                        "\t{fnm} exists and was not overwritten\n".format(
-                            fnm=os.path.basename(outfiles[i] + "_wpt.geojson")
-                        )
-                    )
+                # test for clobber condition
+                if os.path.exists(outname) and not args.clobber:
+                    print(f"File {outname} exists. Use --clobber to overwrite.")
+                    continue
 
-    if args.line:
+                print(f"Writing {layer} as {fmt} to {outname}")
+                write_func(df, outname)
 
-        # Create a shapefile for the metadata - lines only
-        meta = meta.dropna(subset=["lon", "lat", "alt_asl"])
-        if meta.shape[0] == 0:
-            print("No valid location data found - cannot generate shapefile(s)")
-            continue
-        proj = "EPSG:4326"  # Assuming WGS84
-        # Creating a line while zipping 3 coordinates(3 dimension)
-        lines = meta.line.unique()  # finding all the unique object ids
-        index_list = []
-        geometry_list = []
-        for ln in lines:  # looping through lines
-            ln_df = meta.loc[
-                meta.line == ln
-            ]  # subsetting pandas dataframe to the specific object
-            line = LineString(
-                zip(ln_df.lon.astype(float), ln_df.lat.astype(float), ln_df.alt_asl)
-            )
-            line.wkt
-            index_list.append(ln)
-            geometry_list.append(line)
-        line_gd = gpd.GeoDataFrame(index=index_list, crs=proj, geometry=geometry_list)
+            # These are not valid combinations
+            elif fmt != "csv" and layer == "csv":
+                continue
+            # These are not valid combinations
+            elif fmt == "csv" and (layer == "wpt" or layer == "ln"):
+                continue
+            # This part is for geom layers/formats
+            else:
+                df = output_layers[layer]
+                ext = output_formats[fmt]["ext"]
+                write_func = output_formats[fmt]["func"]
+                outname = f"{output_basename}_{layer}{ext}"
 
-        if not args.geojson:  # shapefile
-            if not os.path.isfile(outfiles[i] + "_ln.shp"):
-                line_gd.to_file(outfiles[i] + "_ln.shp")
-                sys.stderr.write(
-                    "\t{fnm} written\n".format(
-                        fnm=os.path.basename(outfiles[i] + "_ln.shp")
-                    )
-                )
-            else:
-                if args.clobber:
-                    line_gd.to_file(outfiles[i] + "_ln.shp")
-                    sys.stderr.write(
-                        "\t{fnm} overwritten\n".format(
-                            fnm=os.path.basename(outfiles[i] + "_ln.shp")
-                        )
-                    )
-                else:
-                    sys.stderr.write(
-                        "\t{fnm} exists and was not overwritten\n".format(
-                            fnm=os.path.basename(outfiles[i] + "_ln.shp")
-                        )
-                    )
-        else:  # geojson
-            if not os.path.isfile(outfiles[i] + "_ln.geojson"):
-                line_gd.to_file(outfiles[i] + "_ln.geojson", driver="GeoJSON")
-                sys.stderr.write(
-                    "\t{fnm} written\n".format(
-                        fnm=os.path.basename(outfiles[i] + "_ln.geojson")
-                    )
-                )
-            else:
-                if args.clobber:
-                    line_gd.to_file(outfiles[i] + "_ln.geojson", driver="GeoJSON")
-                    sys.stderr.write(
-                        "\t{fnm} overwritten\n".format(
-                            fnm=os.path.basename(outfiles[i] + "_ln.geojson")
-                        )
-                    )
-                else:
-                    sys.stderr.write(
-                        "\t{fnm} exists and was not overwritten\n".format(
-                            fnm=os.path.basename(outfiles[i] + "_ln.geojson")
-                        )
-                    )
+                # test for clobber condition
+                if os.path.exists(outname) and not args.clobber:
+                    print(f"File {outname} exists. Use --clobber to overwrite.")
+                    continue
+
+                print(f"Writing {layer} as {fmt} to {outname}")
+                write_func(df, outname)

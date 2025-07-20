@@ -288,10 +288,7 @@ class Radargram(AppWindow):
         filter opperation).
         """
         n = self.data.shape[0]
-        # These next 2 lines of code cause problems in matplotlib 3.5 - can't set them
-        # https://matplotlib.org/stable/api/prev_api_changes/api_changes_3.5.0.html?highlight=axes.lines#behaviour-changes
-        # self.ax.lines = []  ##TODO need workaround as this throws an error (can't set)
-        # self.ax.texts = []  ##TODO need workaround as this throws an error (can't set)
+
         for line in self.ax.lines[:]:  # Iterate over a copy of the list
             line.remove()
         for txt in self.ax.texts[:]:  # Iterate over a copy of the list

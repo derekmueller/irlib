@@ -309,24 +309,15 @@ try:
             print("No valid location data found - cannot generate geopackage(s)")
             sys.exit(1)
 
-        # rename FID to ipr_FID or it will complain the primary key is not an integer
-        df.columns = [
-            "ipr_FID",
-            "line",
-            "lon",
-            "lat",
-            "elev",
-            "thick",
-            "bed_elev",
-            "err",
-        ]
-
         pts_gdf = gpd.GeoDataFrame(
             df,
             geometry=gpd.points_from_xy(
                 df.lon.astype(float), df.lat.astype(float), z=df.elev, crs=proj
             ),
         )
+
+        # this is required to create geopackage output (the field name FID is reserved)
+        pts_gdf.rename(columns={"FID": "ipr_FID"}, inplace=True)
 
         if args.geopackage:
             print("writing to " + fout[:-4] + "_wpt.gpkg")
