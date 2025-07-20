@@ -89,7 +89,26 @@ class RecordList:
     - add datasets by passing h5 dataset objects to `self.AddDataset()`
     """
 
-    def __init__(self, filename=None):
+    def __init__(
+        self, filename=None, eastern_hemisphere=False, southern_hemisphere=False
+    ):
+        """
+        Initialize the RecordList
+
+        Parameters
+        ----------
+        filename : TYPE, optional
+            DESCRIPTION. The default is None.
+        eastern_hemisphere : bool, optional
+            set to True if h5 ver <5 AND survey is in the Eastern Hemisphere. The default is False.
+        southern_hemisphere : TYPE, optional
+            set to True if h5 ver <5 AND survey is in the Southern Hemisphere. The default is False.
+
+        Returns
+        -------
+        None.
+
+        """
 
         # make sure that the filename is actually a filename, not an h5 file itself
         if isinstance(filename, h5py.File):
@@ -97,6 +116,10 @@ class RecordList:
             filename = filename.filename
 
         self.filename = filename
+        # can be used eventually for sorting out how to work with time and location
+        self.fileformat_ver = None
+        self.eastern_hemisphere = eastern_hemisphere
+        self.southern_hemisphere = southern_hemisphere
 
         # now with more metadata fields
         self.attrs = [
@@ -289,10 +312,25 @@ class RecordList:
             except:  # This is the newer way, should work h5py >= 3.0
                 xml = dataset.attrs["GPS Cluster- MetaData_xml"]
 
-            if self._xmlGetValS(xml, "Lat") == "":  # old format
-                self.lats.append(self._dm2dec(self._xmlGetValS(xml, "Lat_N")))
+            if self._xmlGetValS(xml, "Lat") == "":  # old format (ver <5)
+                self.fileformat_ver = "old_gps"
+                if self.southern_hemisphere:
+                    self.lats.append(
+                        self._dm2dec(self._xmlGetValS(xml, "Lat_N")) * -1
+                        if self._dm2dec(self._xmlGetValS(xml, "Lat_N")) is not None
+                        else None
+                    )
+                else:
+                    self.lats.append(self._dm2dec(self._xmlGetValS(xml, "Lat_N")))
                 # the Long_ W space here is important since this IS the variable name (will change in ver 6.2 IceRadar)
-                self.lons.append(self._dm2dec(self._xmlGetValS(xml, "Long_ W")))
+                if self.eastern_hemisphere:
+                    self.lons.append(self._dm2dec(self._xmlGetValS(xml, "Long_ W")))
+                else:
+                    self.lons.append(
+                        self._dm2dec(self._xmlGetValS(xml, "Long_ W")) * -1
+                        if self._dm2dec(self._xmlGetValS(xml, "Long_ W")) is not None
+                        else None
+                    )
             else:
                 self.lats.append(
                     self._dm2dec(self._xmlGetValS(xml, "Lat"))
@@ -362,25 +400,28 @@ class RecordList:
 
         return
 
-    def Write(self, f, eastern_hemisphere=False):
+    def Write(self, f):
         """Write out the data stored internally in CSV format to a file
         object f.
 
-        IF lat and lon are both al
 
         """
         error = 0
 
-        # If this is true, then either we are in the Eastern & Northern Hemisphere
-        # Or this is the old format where the lat/lon were unsigned
-        if (
-            len([lon for lon in self.lons if (lon is not None and lon < 0)])
-            + len([lat for lat in self.lats if (lat is not None and lat < 0)])
-            == 0
-        ):
-            if not eastern_hemisphere:
-                # Invert longitudes to be in the western hemisphere
-                self.lons = [-i if i is not None else i for i in self.lons]
+        # # If this is true, then either we are in the Eastern & Northern Hemisphere
+        # # Or this is the old format where the lat/lon were unsigned
+        # if (
+        #     len([lon for lon in self.lons if (lon is not None and lon < 0)])
+        #     + len([lat for lat in self.lats if (lat is not None and lat < 0)])
+        #     == 0
+        # ):
+        #     if not eastern_hemisphere:
+        #         # Invert longitudes to be in the western hemisphere
+        #         self.lons = [-i if i is not None else i for i in self.lons]
+
+        #     if not southern_hemisphere:
+        #         # Invert latitudes to be in the southern hemisphere
+        #         self.lats = [-i if i is not None else i for i in self.lats]
 
         header = (
             "FID,"

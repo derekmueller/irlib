@@ -46,7 +46,7 @@ def write_shapefile(data, outfile):
     pass
 
 
-def meta2pd(infile):
+def meta2pd(infile, swap_lat=False, swap_lon=False):
     """
     Takes a single h5 file and dumps the metadata to a pandas dataframe
 
@@ -54,7 +54,10 @@ def meta2pd(infile):
     ----------
     infile : str
         An h5 file name, with extension (with path or in current directory)
-
+    swap_lat : bool, optional
+        set to True if h5 ver <5 AND survey is in the Southern Hemisphere, DEFAULT: False
+    swap_lon : bool, optional
+        set to True if h5 ver <5 AND survey is in the Eastern Hemisphere, DEFAULT: False
     Returns
     -------
     a pandas dataframe with slightly different col names (10 char)
@@ -63,7 +66,12 @@ def meta2pd(infile):
     stringbuffer = StringIO.StringIO()
 
     try:
-        irlib.misc.ExtractAttrs(infile, fout=stringbuffer, eastern_hemisphere=False)
+        irlib.misc.ExtractAttrs(
+            infile,
+            fout=stringbuffer,
+            eastern_hemisphere=swap_lon,
+            southern_hemisphere=swap_lat,
+        )
     except:
         sys.stderr.write("Error reading radar data\n")
         raise
@@ -157,6 +165,18 @@ parser.add_argument(
 )
 
 parser.add_argument("--clobber", help="overwrite existing files", action="store_true")
+
+parser.add_argument(
+    "--swap_lon",
+    action="store_true",
+    help="Use if your h5 file if from Ice Radar version < 5 AND your survey is in the Eastern Hemisphere",
+)
+parser.add_argument(
+    "--swap_lat",
+    action="store_true",
+    help="Use if your h5 file if from Ice Radar version < 5 AND your survey is in the Southern Hemisphere",
+)
+
 
 args = parser.parse_args()
 

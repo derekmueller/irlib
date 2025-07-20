@@ -53,8 +53,16 @@ prog_description = """
 parser = argparse.ArgumentParser(description=prog_description)
 parser.add_argument("infile", help="input HDF (*.h5) filename, with or without path")
 parser.add_argument("outfile")
-parser.add_argument("--swap_lon", action="store_true")
-parser.add_argument("--swap_lat", action="store_true")
+parser.add_argument(
+    "--swap_lon",
+    action="store_true",
+    help="Use if your h5 file if from Ice Radar version < 5 AND your survey is in the Eastern Hemisphere",
+)
+parser.add_argument(
+    "--swap_lat",
+    action="store_true",
+    help="Use if your h5 file if from Ice Radar version < 5 AND your survey is in the Southern Hemisphere",
+)
 args = parser.parse_args()
 
 INFILE = args.infile
@@ -80,7 +88,9 @@ datasets = [
     if (isinstance(fin[name], h5py.Dataset) and "picked" not in name)
 ]
 
-metadata = irlib.RecordList(fin.filename)
+metadata = irlib.RecordList(
+    fin.filename, eastern_hemisphere=args.swap_lon, southern_hemisphere=args.swap_lat
+)
 print("reading metadata...")
 failed = []
 for i, dataset in enumerate(datasets):
@@ -94,22 +104,6 @@ for i in failed[::-1]:
     del datasets[i]
 print("\tdone")
 
-# Based on centroid of survey, determine if this is old format or new format
-xlm, ylm = calculate_centroid(metadata.lons, metadata.lats)
-if xlm > 0 and ylm > 0:
-    # This is Northern and Eastern Hemisphere... See if you should swap_lon
-    if args.swap_lon:
-        print("swapping sign on longitudes for eastern hemisphere")
-        lons = metadata.lons
-    else:
-        lons = [-lon if lon is not None else None for lon in metadata.lons]
-else:
-    lons = metadata.lons
-if args.swap_lat:
-    lats = [-lat if lat is not None else None for lat in metadata.lats]
-else:
-    lats = metadata.lats
-
 num_sat = metadata.num_sat
 fix_qual = metadata.fix_qual
 gps_fix_valid = metadata.gps_fix_valid
@@ -119,7 +113,7 @@ gps_message_ok = metadata.gps_message_ok
 eastings = []
 northings = []
 
-xlm, ylm = calculate_centroid(lons, lats)
+xlm, ylm = calculate_centroid(metadata.lons, metadata.lats)
 zone, hemi = calculate_utm_zone(xlm, ylm)
 
 # projector = pyproj.Proj(proj='utm', zone=7, north=True)    # St Elias Range
@@ -136,7 +130,7 @@ if hemi == "S":
 
 print("Projecting to UTM zone {0}{1}".format(zone, hemi))
 
-for i, (lon, lat) in enumerate(zip(lons, lats)):
+for i, (lon, lat) in enumerate(zip(metadata.lons, metadata.lats)):
     if lon is not None and lat is not None:
         x, y = projector(lon, lat)
     else:

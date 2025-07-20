@@ -35,9 +35,8 @@ Version ? IceRadar: (ca. 2009)
 
 	lat and lon were both recorded as positive integers in fields Lat_N and Long_W. If either the lat and 
 	lon are negative numbers, then irlib assumes that this paradigm is not in effect. 
-	The user can use --swap_lon and --swap_lat to change the sign of either lat and lon in h5_add_utm.py 
-	and --positivecoords in h5_replace_gps.py
-	
+	The user can use --swap_lon and --swap_lat to change the sign of either lat and lon in h5_dumpmeta.py, h5_add_utm.py and join_radar.py
+		
 	Computer time stored as PCSavetimestamp: mm/dd/yyyy_HH:MM:SS am/pm like "3/12/2014_11:49:20 AM" There are no
 	GPSCapture stats.
 	

@@ -114,10 +114,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-p",
-    "--positive",
-    help="My data is in an old format where only positive lat and lon are given. When set this places the coordinate in the northern and western hemisphere, by multiplying lon by -1",
+    "--swap_lon",
     action="store_true",
+    help="Use if your h5 file if from Ice Radar version < 5 AND your survey is in the Eastern Hemisphere",
+)
+parser.add_argument(
+    "--swap_lat",
+    action="store_true",
+    help="Use if your h5 file if from Ice Radar version < 5 AND your survey is in the Southern Hemisphere",
 )
 
 args = parser.parse_args()
@@ -225,6 +229,7 @@ try:
         # GET RADAR LINE DATAFRAME
         L = S.ExtractLine(line)
         sample_rate = L.rate
+        fileformat_ver = L.metadata.fileformat_ver
         L = pd.DataFrame(
             {
                 "FID": L.metadata.fids,
@@ -234,6 +239,12 @@ try:
             },
             columns=["FID", "lon", "lat", "elev"],
         )
+
+        if fileformat_ver == "old_gps":
+            if args.swap_lon:
+                L.lon = L.lon * -1
+            if args.swap_lat:
+                L.lat = L.lat * -1
 
         # MERGE THESE TOGETHER INTO ONE DATAFRAME:
         # only the picks that have ratings (and ratings that have picks) will go forward
@@ -287,9 +298,6 @@ try:
         os.makedirs(path_out)
 
     fout = path_out + prefix + "_result.csv"
-
-    if args.positive:
-        df.lon = df.lon * -1
 
     # filter on rating
     df = df[(df["rating"] >= qual_min)]

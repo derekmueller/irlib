@@ -28,7 +28,7 @@ represent the step that you just completed.
 *  ``h5_replace_gps.py`` : if you have better GPS data use it to refine position 
 *  ``h5_add_utm.py`` : allows irlib to calculate distances easier using Cartesian coordinates 
 *  ``h5_dumpmeta.py`` : check that all is well by comparing to earlier metadata
-*  ``h5_dumpmeta.py`` : generate caches to speed up data access and do some more metadata
+*  ``h5_generate_caches.py`` : generate caches to speed up data access and do some more metadata
 
 Once this has been been completed the data is ready to be used for ice thickness
 determination.
@@ -91,9 +91,7 @@ be used to specify matching tolerances and which lines to work on.
 		-n  	Replace coordinates in HDF with no appropriate supplementary GPS 
 				counterpart with 'NaN'. By default, the original coordinates 
 				are retained.
-		-p  	Keep all coordinates positive (use with old h5 format where 
-				coordinates are Lat_N and Long_W).
-		
+
 
 h5_add_utm
 ~~~~~~~~~~
@@ -182,7 +180,7 @@ h5_dumpmeta
 h5_dumpmeta exports the radar metadata to a CSV file or a shapefile. The actual sounding data is not included.
 
 
-    SYNTAX: h5_dumpmeta.py [-h] [-o OUTFILE] [-c] [-w] [-l] [--clobber] infile
+    SYNTAX: h5_dumpmeta.py [-h] [-o OUTFILE] [-c] [-w] [-l] [-g] [-s] [-j] [-k] [--clobber] [--swap_lon] [--swap_lat] infile
 
     Positional arguments:
 		-infile	input HDF (*.h5) filename, with or without path, if you use wildcards in linux, put this in quotes
@@ -191,10 +189,15 @@ h5_dumpmeta exports the radar metadata to a CSV file or a shapefile. The actual 
 		-o 		output file BASENAME [if missing, will be automatically 
 				generated]
 		-c 		create csv metadata file
-		-w 		create a waypoint metadata shapefile
-		-l 		create a line metadata shapefile
+		-w 		create a waypoint layer geospatial file
+		-l 		create a line layer geospatial file
+		-g		create a geopackage file
+		-s		create a shapefile
+		-j		create a geojson file
+		-k		create a kml file
 		--clobber  	overwrite existing files
-		
+		--swap_lon	use if your h5 file if from Ice Radar version < 5 AND your survey is in the Eastern Hemisphere
+		--swap_lat	use if your h5 file if from Ice Radar version < 5 AND your survey is in the Southern Hemisphere
 
 h5_export
 ~~~~~~~~~

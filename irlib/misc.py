@@ -76,7 +76,9 @@ def LoadCoords(line, filename, L):
     return (R.lats, R.lons), (R.eastings, R.northings), fids
 
 
-def ExtractAttrs(h5file, outfile=None, fout=None, eastern_hemisphere=False):
+def ExtractAttrs(
+    h5file, outfile=None, fout=None, eastern_hemisphere=False, southern_hemisphere=False
+):
     """Extract the metadata for each trace in a radar archive.
     Optionally write this data out to a comma-delimited file that can be
     imported into a GIS.
@@ -95,7 +97,11 @@ def ExtractAttrs(h5file, outfile=None, fout=None, eastern_hemisphere=False):
         sys.stderr.write("\t{n} datasets found\n".format(n=len(names)))
 
         # Record the ID params, UTC time, and coordinates for each dataset
-        records = RecordList(h5file)
+        records = RecordList(
+            h5file,
+            eastern_hemisphere=eastern_hemisphere,
+            southern_hemisphere=southern_hemisphere,
+        )
         for name in datasets:
             fid = path2fid(name)
             records.AddDataset(f[name], fid=fid)
@@ -105,11 +111,11 @@ def ExtractAttrs(h5file, outfile=None, fout=None, eastern_hemisphere=False):
         if outfile:
             # Export as a CSV, creating a file with name outfile
             with open(outfile, "w") as fout:
-                records.Write(fout, eastern_hemisphere=eastern_hemisphere)
+                records.Write(fout)
             sys.stderr.write("\t{f} written\n".format(f=os.path.basename(outfile)))
         elif fout:
             # Export as a CSV, using the provided file object
-            records.Write(fout, eastern_hemisphere=eastern_hemisphere)
+            records.Write(fout)
             sys.stderr.write("\tstream generated\n")
 
     finally:

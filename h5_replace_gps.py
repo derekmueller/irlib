@@ -200,9 +200,10 @@ def readgpx(gpx_file):
 
 ## MAIN PROGRAM
 
-prog_description = "This tool replaces the existing geographical data in a ice radar HDF \
+prog_description = "This tool replaces the existing geospatial data in a ice radar HDF \
     database with data taken from a GPX file, e.g. obtained from a handheld or \
-    external GPS unit or from a CSV file, e.g. obtained from a PPP output of GPS data"
+    external GPS unit or from a CSV file, e.g. obtained from a PPP output of GPS data. \
+    It matches based on time only. "
 prog_epilog = " Example: h5_replace_gps.py -n survey.h5 survey_ppp.h5 ppp*.csv ppp "
 parser = argparse.ArgumentParser(description=prog_description, epilog=prog_epilog)
 parser.add_argument(
@@ -257,46 +258,26 @@ parser.add_argument(
     help="Replace coordinates in HDF with no appropriate supplementary GPS counterpart with 'NaN'. By default, the original coordinates are retained.",
     action="store_true",
 )
-parser.add_argument(
-    "-p",
-    "--positivecoords",
-    help="Keep all coordinates positive (use with old h5 format where Lat_N and Long_W)",
-    action="store_true",
-)
 
 args = parser.parse_args()
 
 print("Performing coordinate replacement\n\n")
 print(
     "\t======== PARAMETERS =========\n"
-    "\tSRC dataset:      {infile}\n"
-    "\tDST dataset:      {outfile}\n"
-    "\tGPS source:       {gpssource}\n"
-    "\tTime source:      {timesource}\n"
-    "\tGPS file:         {gpsfile}\n\n"
-    "\tDelta time max:   {max_dt} sec\n"
-    "\tTZ offset:        {tzoffset:+} hr\n"
-    "\tINSERT NaNs:      {insert_nans}\n"
-    "\tOFFSET Elev:      {offsetElev}\n"
-    "\tLine:             {line}\n"
-    "\tPositive Coords:  {positive}\n".format(
-        infile=args.infile,
-        tzoffset=args.tzoffset,
-        gpssource=args.gpssource,
-        timesource=args.timesource,
-        gpsfile=args.gpsfile,
-        max_dt=args.deltatimemax,
-        outfile=args.outfile,
-        insert_nans=args.replaceNaN,
-        line=args.line,
-        offsetElev=args.offsetElev,
-        positive=args.positivecoords,
-    )
+    f"\tSRC dataset:      {args.infile}\n"
+    f"\tDST dataset:      {args.outfile}\n"
+    f"\tGPS source:       {args.gpssource}\n"
+    f"\tTime source:      {args.timesource}\n"
+    f"\tGPS file:         {args.gpsfile}\n\n"
+    f"\tDelta time max:   {args.deltatimemax} sec\n"
+    f"\tTZ offset:        {args.tzoffset:+} hr\n"
+    f"\tINSERT NaNs:      {args.replaceNaN}\n"
+    f"\tOFFSET Elev:      {args.offsetElev}\n"
+    f"\tLine:             {args.line}\n"
 )
 
 max_dt = int(args.deltatimemax)  # 15 second default
 insert_nans = args.replaceNaN
-positive = args.positivecoords
 
 if args.gpssource == "ppp":
     gps = readppp(args.gpsfile)
@@ -314,6 +295,31 @@ shutil.copyfile(args.infile, args.outfile)
 
 # Load HDF file
 hdf = h5py.File(args.outfile, "r+")
+
+# get a metadata record here.... all this for just one purpose (to get the metadata.fileformat_ver)
+print("querying input dataset...")
+names = []
+hdf.visit(names.append)
+datasets = [
+    name
+    for name in names
+    if (isinstance(hdf[name], h5py.Dataset) and "picked" not in name)
+]
+
+metadata = irlib.RecordList(hdf.filename)
+print("reading metadata...")
+failed = []
+for i, dataset in enumerate(datasets):
+    try:
+        metadata.AddDataset(hdf[dataset])
+    except Exception as e:
+        sys.stderr.write("Failed to read {0} due to {1}\n".format(dataset, e))
+        failed.append(i)
+
+for i in failed[::-1]:
+    del datasets[i]
+print("\tdone")
+
 
 if args.line is None:
     lines = hdf.keys()
@@ -434,7 +440,7 @@ for i, dataset in enumerate(hdfaddrs):
         xml = dataset.attrs["GPS Cluster- MetaData_xml"]
 
         if dt_mask[i]:  # better gps
-            if positive:
+            if metadata.fileformat_ver == "old_gps":
                 xml = substituteXMLval(
                     "Long_ W", dec2dm(interp_lons[i], signed=False), xml
                 )
@@ -450,7 +456,7 @@ for i, dataset in enumerate(hdfaddrs):
             irep += 1
 
         elif insert_nans:  # exceed max_dt so gps not good, replace with NAN
-            if positive:
+            if metadata.fileformat_ver == "old_gps":
                 xml = substituteXMLval("Long_ W", "NaN", xml)
                 xml = substituteXMLval("Lat_N", "NaN", xml)
                 xml = substituteXMLval("Alt_asl_m", "NaN", xml)
