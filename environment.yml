@@ -6,9 +6,9 @@ dependencies:
   - python
   - h5py 
   - scipy 
-  - matplotlib 
+  - matplotlib >= 3.0
   - cython 
-  - geopandas 
+  - geopandas >= 1.0
   - vitables 
   - sphinx
   - numpydoc

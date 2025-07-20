@@ -290,8 +290,12 @@ class Radargram(AppWindow):
         n = self.data.shape[0]
         # These next 2 lines of code cause problems in matplotlib 3.5 - can't set them
         # https://matplotlib.org/stable/api/prev_api_changes/api_changes_3.5.0.html?highlight=axes.lines#behaviour-changes
-        # self.ax.lines = []   ##TODO need workaround as this throws an error (can't set)
-        # self.ax.texts = []   ##TODO need workaround as this throws an error (can't set)
+        # self.ax.lines = []  ##TODO need workaround as this throws an error (can't set)
+        # self.ax.texts = []  ##TODO need workaround as this throws an error (can't set)
+        for line in self.ax.lines[:]:  # Iterate over a copy of the list
+            line.remove()
+        for txt in self.ax.texts[:]:  # Iterate over a copy of the list
+            txt.remove()
 
         # Draw nodes
         drawxy = lambda xy: self.ax.plot(
@@ -519,7 +523,7 @@ class PickWindow(AppWindow):
             # Determine if trace already has a point, and if so, remove it
             pr = self._active_reg()
             if pr[activetrace] is not None:
-                self.ax.lines.remove(pr[activetrace][0])
+                pr[activetrace][0].remove()
                 pr[activetrace] = None
 
             if event.button == 1:
@@ -610,8 +614,8 @@ class PickWindow(AppWindow):
         """Remove the last pick point drawn, according to the
         registry."""
         pr = self._active_reg()
-        if self.activetrace is not None:
-            self.ax.lines.remove(pr[self.activetrace][0])
+        if self.activetrace is not None and pr[self.activetrace] is not None:
+            pr[self.activetrace][0].remove()
             pr[self.activetrace] = None
         return
 
@@ -777,8 +781,10 @@ class PickWindow(AppWindow):
         if fnm is None:
             fnm = self._get_pick_fnm()
         fh = irlib.FileHandler(fnm, self.L.line, fids=self.L.fids)
-        fh.AddBedPicks(self.L.fids, self.bed_points)
-        fh.AddDCPicks(self.L.fids, self.dc_points)
+        fh.AddPicks(self.L.fids, self.bed_points, pick_type="bed")
+        fh.AddPicks(self.L.fids, self.dc_points, pick_type="dc")
+        # fh.AddBedPicks(self.L.fids, self.bed_points)
+        # fh.AddDCPicks(self.L.fids, self.dc_points)
         fh.ComputeTravelTimes()
         fh.Write()
         return

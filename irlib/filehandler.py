@@ -2,7 +2,10 @@
 and writing picking files."""
 
 import os
+import pandas as pd
 import numpy as np
+import traceback
+import sys
 
 
 class FileHandler:
@@ -114,27 +117,61 @@ class FileHandler:
         dcvals_interpolated = np.interp(all_locs, locs, self.dcvals)
         return dcvals_interpolated, bedvals_interpolated
 
-    def AddBedPicks(self, fids, vals):
-        """Add reflection picks at locations given by FIDs"""
-        for fid, val in zip(fids, vals):
-            if fid in self.fids:
-                self.bedvals[self.fids.index(fid)] = val
-            else:
-                self.fids.append(fid)
-                self.bedvals.append(val)
+    def AddPicks(self, fids, vals, pick_type="bed"):
+        """Add picks at locations given by FIDs.
+
+        This will preserve picks for FIDs that don't exist in the current h5 file, in case
+        you want to return to these some other time (with different preprocessing steps)
+
+        """
+        # create a pandas dataframe to hold FID, dc, bed
+        df_file = pd.DataFrame(
+            {"FID": self.fids, "dc": self.dcvals, "bed": self.bedvals}
+        )
+        if pick_type == "bed":
+            df_picks = pd.DataFrame({"FID": fids, "bed": vals})
+        elif pick_type == "dc":
+            df_picks = pd.DataFrame({"FID": fids, "dc": vals})
+
+        # 1. Set FID as index for both DataFrames to align on FID
+        file_indexed = df_file.set_index("FID")
+        picks_indexed = df_picks.set_index("FID")
+
+        # 2. Update values from df_picks where FIDs match
+        file_indexed.update(picks_indexed)
+
+        # 3. Find new FIDs in df_picks and append as new records
+        new_records = picks_indexed.loc[~picks_indexed.index.isin(file_indexed.index)]
+        all_picks = pd.concat([file_indexed, new_records], axis=0).reset_index()
+
+        # leave the pandas paradigm - back to lists.
+        self.fids = all_picks.FID.to_list()
+        self.bedvals = all_picks.bed.to_list()
+        self.dcvals = all_picks.dc.to_list()
         self.sort()
         return
 
-    def AddDCPicks(self, fids, vals):
-        """Add direct wave picks at locations given by FIDs"""
-        for fid, val in zip(fids, vals):
-            if fid in self.fids:
-                self.dcvals[self.fids.index(fid)] = val
-            else:
-                self.fids.append(fid)
-                self.dcvals.append(val)
-        self.sort()
-        return
+    # def AddBedPicks(self, fids, vals):
+    #     """Add reflection picks at locations given by FIDs"""
+    #     for fid, val in zip(fids, vals):
+    #         if fid in self.fids:
+    #             self.bedvals[self.fids.index(fid)] = val
+    #         else:
+    #             self.fids.append(fid)
+    #             self.bedvals.append(val)
+    #     self.sort()
+    #     return
+
+    # def AddDCPicks(self, fids, vals):
+    #     """Add direct wave picks at locations given by FIDs"""
+    #     for fid, val in zip(fids, vals):
+    #         if fid in self.fids:
+    #             self.dcvals[self.fids.index(fid)] = val
+    #         else:
+    #             self.fids.append(fid)
+    #             self.dcvals.append(val)
+    #     self.sort()
+    #     return
 
     def ComputeTravelTimes(self):
         """Where possible, subtract dc times from bed times."""
