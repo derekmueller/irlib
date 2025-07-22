@@ -77,6 +77,33 @@ def isodate(dt):
     return dt.strftime("%Y-%m-%d %H:%M:%S.%f")
 
 
+def lowerspace(xml):
+    """
+    Converts all field names in an xml string to lower case and removes
+    any spaces as well
+
+    Needed to make field names consistent with new format (IceRadar 6.2+)
+    TODO: make code compatible with this newer format - see AddDataset below.
+
+    Parameters
+    ----------
+    xml : str
+        an xml string
+
+    Returns
+    -------
+    xml : str
+        the xml string fixed up nicely.
+
+    """
+    # this approach is very slimplistic and would only work if there are no spaces in the values themselves
+    xml = xml.replace(" ", "")
+    # otherwise need to parse out everything between < and > and <\ and > and remove spaces there try a variant of..
+    # m = re.search(r'<Name>{0}</Name>[\r]?\n<Val>([0-9.]+?)</Val>'.format(name.replace(' ', '\s')), xml, flags=re.IGNORECASE)
+
+    return xml
+
+
 class RecordList:
     """Class to simplify the extraction of metadata from HDF5 radar
     datasets.
@@ -232,6 +259,8 @@ class RecordList:
 
         Does not read pick data.
 
+        TODO: update to work with IceRadar h5 format 6.2+
+
         Parameters
         ----------
         dataset : an h5py dataset at the `echogram` level
@@ -311,7 +340,7 @@ class RecordList:
                 xml = dataset.attrs["GPS Cluster- MetaData_xml"].decode("utf-8")
             except:  # This is the newer way, should work h5py >= 3.0
                 xml = dataset.attrs["GPS Cluster- MetaData_xml"]
-
+            # xml = lowerspace(xml)  # for version 6 data (TODO add this but need to put all the tag names in lower case below)
             if self._xmlGetValS(xml, "Lat") == "":  # old format (ver <5)
                 self.fileformat_ver = "old_gps"
                 if self.southern_hemisphere:
@@ -332,12 +361,9 @@ class RecordList:
                         else None
                     )
             else:
-                self.lats.append(
-                    self._dm2dec(self._xmlGetValS(xml, "Lat"))
-                )  # Changed from Lat_N
-                self.lons.append(
-                    self._dm2dec(self._xmlGetValS(xml, "Long"))
-                )  # Changed from Long_W
+                # work with version 5 format...
+                self.lats.append(self._dm2dec(self._xmlGetValS(xml, "Lat")))
+                self.lons.append(self._dm2dec(self._xmlGetValS(xml, "Long")))
 
             self.gps_time.append(self._xmlGetValS(xml, "GPS_timestamp_UTC"))
 
@@ -360,6 +386,8 @@ class RecordList:
                 xml = dataset.attrs["Digitizer-MetaData_xml"].decode("utf-8")
             except:  # This is the newer way, should work h5py >= 3.0
                 xml = dataset.attrs["Digitizer-MetaData_xml"]
+            # xml = lowerspace(xml)  # TODO implement ver 6.2 note changes in variable names:
+            # 'verticalrange', 'samplerate', 'triggerlevel', 'recordlength'
             self.vrange.append(self._xmlGetValF(xml, "vertical range"))
             self.sample_rate.append(self._xmlGetValF(xml, " sample rate"))
             self.stacking.append(self._xmlGetValI(xml, "Stacking"))
@@ -408,6 +436,8 @@ class RecordList:
         """
         error = 0
 
+        # This is commented out b/c the recordlist object _now_ has signed lat and lon from
+        # code changes upstream (July 2025). It is not needed any longer and can be removed eventually...
         # # If this is true, then either we are in the Eastern & Northern Hemisphere
         # # Or this is the old format where the lat/lon were unsigned
         # if (
