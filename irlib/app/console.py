@@ -115,21 +115,27 @@ class Console(object):
             self.line = line
         if loaded is False:
             line = self.survey.ExtractLine(lineno, datacapture=dcno)
-            if line.nx >= 2:
-                try:
-                    line.RemoveBadLocations()
-                    line.RemoveGPSNaNs()
-                    line.FixStaticGPS()
-                    line.RemoveBlankTraces()
-                    line.RemoveStationary(threshold=3.0)
+            if line:
+                if line.nx >= 2:
+                    try:
+                        line.RemoveBadLocations()
+                        line.RemoveGPSNaNs()
+                        line.FixStaticGPS()
+                        line.RemoveBlankTraces()
+                        line.RemoveStationary(threshold=3.0)
+                        self.line = line
+                    except gather.LineGatherError:
+                        pass
+                elif line.nx == 1:
                     self.line = line
-                except gather.LineGatherError:
-                    pass
-            elif line.nx == 1:
-                self.line = line
-            else:
-                print("line {0}:{0} contains no data".format(lineno, dcno))
-                self.line = None
+                else:
+                    print(
+                        "line {0}:{1} contains no data or is missing".format(
+                            lineno, dcno
+                        )
+                    )
+                    self.line = None
+            print("line {0}:{1} contains no data or is missing".format(lineno, dcno))
         return
 
     def get_command(self):

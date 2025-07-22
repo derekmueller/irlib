@@ -78,39 +78,15 @@ def meta2pd(infile, swap_lat=False, swap_lon=False):
 
     stringbuffer.seek(0)
     meta = pd.read_csv(stringbuffer, header=0)
-    # change column headings to be 10 chars or less
-    meta.columns = [
-        "FID",
-        "filename",
-        "line",
-        "location",
-        "datacapt",
-        "echogram",
-        "timestamp",
-        "lat",
-        "lon",
-        "gps_time",
-        "fix_qual",
-        "num_sat",
-        "dilution",
-        "alt_asl",
-        "geoid_ht",
-        "gps_fix",
-        "gps_ok",
-        "vrange",
-        "samplerate",
-        "stacking",
-        "trig_level",
-        "rec_len",
-        "startbuf",
-        "buftime",
-        "pps",
-        "datum",
-        "easting",
-        "northing",
-        "elevation",
-        "zone",
-    ]
+
+    # change column headings to be 10 chars or less  (could get rid of this if not using shapefiles)
+    meta.rename(
+        columns={
+            "datacapture": "datacapt",
+            "vertical_range": "vrange",
+            "sample_rate": "samplerate",
+        }
+    )
     meta = meta.sort_values("FID")
 
     # format FID
@@ -192,11 +168,15 @@ outfiles = [f.rsplit(".")[0] for f in infiles]
 
 # interpret outfiles as a path if there is a wildcard in the infile list
 if "*" in args.infile or "?" in args.infile:
+    if args.outfile == None:
+        args.outfile = "."
     outfiles = [os.path.join(args.outfile, fname) for fname in outfiles]
 
 else:
     if len(infiles) == 1 and args.outfile:
-        outfiles[0] = args.outfile
+        if args.outfile:
+            outfiles[0] = args.outfile
+
 
 # go through all files.
 for i, infile in enumerate(infiles):
